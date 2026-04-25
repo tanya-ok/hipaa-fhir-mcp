@@ -79,7 +79,7 @@ Every invocation emits a structured audit record:
 
 ## Requirements
 
-- Node.js 20+ (22 recommended)
+- Node.js 25+
 - npm, pnpm, or yarn
 
 ## Install
