@@ -8,15 +8,22 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-26
+
 ### Added
 
 - `docs/demo.md`: end-to-end walkthrough that takes the prototype from a clean clone through MCP Inspector to a working Claude Desktop session, with a live audit-log trace and a no-PHI verification step. Linked from the README.
+- `manifest.json`: Claude Desktop Extension (MCPB) manifest. Declares the three tools, the Node entry point, and three `user_config` fields (FHIR base URL, caller identity, audit log file path). Lets a non-developer install the prototype via `Settings -> Extensions -> Install Extension...` in Claude Desktop without editing `claude_desktop_config.json`.
+- `.github/workflows/release.yml`: tag-triggered release workflow. On `v*` tag push, runs typecheck/test/build/PHI-sweep, prunes dev dependencies, validates the manifest, packs the `.mcpb` artifact, and publishes a GitHub release with the artifact attached and auto-generated notes.
+- `pnpm package:mcpb` script: local sanity check that builds and packs the extension. Output is fat locally because dev dependencies remain installed; the CI workflow produces the slim release artifact.
 
 ### Changed
 
 - Package manager: migrated from npm to pnpm. `pnpm-lock.yaml` is now the committed lockfile; `package-lock.json` removed. The pnpm version is pinned via the `packageManager` field in `package.json` and resolved through Corepack. Dockerfile, CI workflow, and Dependabot configuration updated. README, AGENTS.md, and `docs/security-automation.md` use pnpm commands.
-- Dependabot configuration: each ecosystem (pnpm, GitHub Actions, Docker) now produces at most one routine PR per week, bundling every update-type into a single group. Security advisories still open ad-hoc PRs.
+- `package.json` `packageManager` now carries an SHA-512 integrity hash (`pnpm@10.33.2+sha512.a90faf...`). Corepack verifies the downloaded pnpm tarball before activating it.
+- Dependabot configuration: each ecosystem (npm reads `pnpm-lock.yaml`, GitHub Actions, Docker) now produces at most one routine PR per week, bundling every update-type into a single group. Security advisories still open ad-hoc PRs.
 - TypeScript and zod major-version bumps are excluded from automatic Dependabot PRs and must be tackled deliberately. Documented in `.github/dependabot.yml`.
+- README "Connect to Claude Desktop" section restructured into "Install in Claude Desktop" with Option A (native `.mcpb` extension, recommended) and Option B (manual config for development).
 
 ## [0.1.2] - 2026-04-26
 
@@ -59,7 +66,8 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
-[Unreleased]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.2.0
 [0.1.2]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.2
 [0.1.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.0
