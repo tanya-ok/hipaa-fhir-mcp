@@ -19,23 +19,23 @@ It is a **prototype**, not a production system. The "HIPAA scope statement" tabl
 | Test | `vitest` |
 | Build | `tsc` to `dist/` |
 
-Package manager: `npm` (lockfile committed). Do not migrate to pnpm or yarn without an explicit ask.
+Package manager: `pnpm` (lockfile `pnpm-lock.yaml` committed). The version is pinned in `package.json` via the `packageManager` field; Corepack picks it up automatically. Do not migrate to npm or yarn without an explicit ask.
 
 ## Commands
 
 ```fish
-npm install
-npm run dev         # tsx src/server.ts
-npm run typecheck   # tsc --noEmit
-npm test            # vitest run
-npm run build       # tsc -> dist/
-npm start           # node dist/server.js (after build)
+pnpm install
+pnpm dev            # tsx src/server.ts
+pnpm typecheck      # tsc --noEmit
+pnpm test           # vitest run
+pnpm build          # tsc -> dist/
+pnpm start          # node dist/server.js (after build)
 ```
 
 To exercise the server interactively:
 
 ```fish
-npx @modelcontextprotocol/inspector npx tsx src/server.ts
+pnpm dlx @modelcontextprotocol/inspector pnpm exec tsx src/server.ts
 ```
 
 ## Layout
@@ -102,9 +102,9 @@ Conventions:
 
 A change is done when all of the following hold:
 
-- `npm run typecheck` passes.
-- `npm test` passes.
-- `npm run build` produces `dist/` cleanly.
+- `pnpm typecheck` passes.
+- `pnpm test` passes.
+- `pnpm build` produces `dist/` cleanly.
 - Any new tool registers itself, validates input with zod, and emits an audit record on every invocation including failure.
 - The HIPAA scope table in `README.md` and the control table in `docs/hipaa-compliance-mapping.md` remain accurate.
 - The change is in a feature branch with a passing CI run, and the PR description states the HIPAA impact (or "none, internal refactor").

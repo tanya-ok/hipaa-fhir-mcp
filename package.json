@@ -19,9 +19,10 @@
     "dev": "tsx src/server.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "audit": "npm audit --audit-level=moderate",
+    "audit": "pnpm audit --audit-level moderate",
     "check:phi": "node scripts/check-phi.mjs"
   },
+  "packageManager": "pnpm@10.33.2",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "axios": "^1.15.2",
