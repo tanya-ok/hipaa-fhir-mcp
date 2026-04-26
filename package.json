@@ -1,6 +1,6 @@
 {
   "name": "hipaa-fhir-mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "HIPAA-oriented MCP server exposing FHIR R4 tools to AI agents",
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,9 @@
     "start": "node dist/server.js",
     "dev": "tsx src/server.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "audit": "npm audit --audit-level=moderate",
+    "check:phi": "node scripts/check-phi.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
