@@ -131,21 +131,32 @@ pnpm test
 pnpm build
 ```
 
-## Connect to Claude Desktop
+## Install in Claude Desktop
 
-For a step-by-step walkthrough that takes the prototype from a clean clone through MCP Inspector to a working Claude Desktop session, with a live audit-log trace and a no-PHI verification, see [`docs/demo.md`](docs/demo.md).
+Two paths. The native extension is the right choice for end users; the manual config is for active development.
 
-Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+### Option A: native extension (`.mcpb`)
+
+1. Download `hipaa-fhir-mcp-X.Y.Z.mcpb` from the [latest release](https://github.com/tanya-ok/hipaa-fhir-mcp/releases/latest).
+2. In Claude Desktop: `Settings -> Extensions -> Install Extension...` and select the file.
+3. The form prompts for three values: FHIR base URL, caller identity, audit log file path. Defaults work for the public sandbox; only the audit log file path needs an absolute path of your choice.
+4. Restart Claude Desktop. The three tools appear in the tools menu under `hipaa-fhir-mcp`.
+
+The extension uses Claude Desktop's bundled Node runtime, so no system-level Node install is required.
+
+### Option B: manual config (development)
+
+For a step-by-step walkthrough that takes the prototype from a clean clone through MCP Inspector to a working Desktop session, with a live audit-log trace and a no-PHI verification, see [`docs/demo.md`](docs/demo.md).
+
+Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows). Replace the absolute paths with values from your machine:
 
 ```json
 {
   "mcpServers": {
     "hipaa-fhir-mcp": {
-      "command": "/absolute/path/to/pnpm",
+      "command": "/absolute/path/to/node",
       "args": [
-        "exec",
-        "tsx",
-        "/absolute/path/to/hipaa-fhir-mcp/src/server.ts"
+        "/absolute/path/to/hipaa-fhir-mcp/dist/server.js"
       ],
       "env": {
         "FHIR_BASE_URL": "https://r4.smarthealthit.org",
@@ -158,7 +169,9 @@ Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop
 }
 ```
 
-Use absolute paths. macOS GUI apps do not always inherit your shell `PATH`, so a bare `pnpm` may not resolve. Run `which pnpm` and paste the result into `command`.
+Use absolute paths. macOS GUI apps do not always inherit your shell `PATH`, so a bare `node` may not resolve. Run `which node` (and follow with `readlink -f` if you use a version manager) and paste the result into `command`.
+
+Build first: `pnpm install && pnpm build` so `dist/server.js` exists.
 
 Restart Claude Desktop. The three tools appear under the server name in the tools menu.
 
