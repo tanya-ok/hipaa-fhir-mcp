@@ -8,7 +8,17 @@ The goal is to show the intersection of four things that rarely appear in the sa
 - AWS security patterns (IAM, VPC endpoints, KMS envelope encryption)
 - FHIR R4 with a SMART-on-FHIR OAuth 2.1 + PKCE upgrade path
 
-This is a portfolio / open-source scaffold. The gaps between "prototype" and "production" are listed explicitly in [`docs/hipaa-compliance-mapping.md`](docs/hipaa-compliance-mapping.md).
+## Why this exists
+
+AI agents are increasingly given direct access to data systems through MCP. In healthcare, that data is regulated and the required controls are specific: HIPAA §164.312 names them. Most public MCP examples ignore the regulatory context; most HIPAA write-ups predate AI agents.
+
+This repository sits at that intersection. It is a working scaffold that lets an engineer see, in one place:
+
+- which Technical Safeguards a HIPAA-aligned MCP server actually needs,
+- which ones live in code, which live in infrastructure, and which are organizational policy,
+- what the production path looks like when the prototype's stubs become real implementations.
+
+The point is not to ship a compliant system. The point is to make the gap between "MCP demo" and "HIPAA-compliant deployment" concrete enough to discuss. The full gap list is in [`docs/hipaa-compliance-mapping.md`](docs/hipaa-compliance-mapping.md).
 
 ## HIPAA scope statement
 
@@ -192,6 +202,20 @@ hipaa-fhir-mcp/
 ├── vitest.config.ts
 └── README.md
 ```
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are tagged `vX.Y.Z` and tracked in [`CHANGELOG.md`](CHANGELOG.md).
+
+While the project is **pre-1.0**, the public surface (MCP tool signatures, audit record schema, environment variable names, CLI flags) may change in any minor release. Pin to an exact version or commit SHA for reproducibility.
+
+| Change type | Pre-1.0 bump | Post-1.0 bump |
+|---|---|---|
+| Bug fix, dependency bump, doc-only change | patch | patch |
+| New MCP tool, new optional env var, additive audit field | minor | minor |
+| MCP tool removed or renamed, audit schema field removed or renamed, env var renamed, breaking config change | minor | major |
+
+Schema-level changes are also called out in the changelog under a `### Changed` or `### Removed` heading so a downstream consumer can spot them at a glance.
 
 ## License
 
