@@ -2,9 +2,9 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AuditLogger, hashPatientId } from "../src/audit/logger.js";
+import { AuditLogger } from "../src/audit/logger.js";
 import type { Config } from "../src/config.js";
-import { FhirError, type FhirClient } from "../src/fhir/client.js";
+import { type FhirClient, FhirError } from "../src/fhir/client.js";
 import type {
   MedicationRequest,
   Observation,
@@ -15,10 +15,13 @@ import { getPatient } from "../src/tools/get-patient.js";
 import { searchObservations } from "../src/tools/search-observations.js";
 import type { ToolDeps } from "../src/tools/types.js";
 
+const TEST_HMAC_KEY = "0".repeat(64);
+
 function makeConfig(overrides: Partial<Config> = {}): Config {
   return {
     FHIR_BASE_URL: "https://r4.smarthealthit.org",
     CALLER_IDENTITY: "test-caller",
+    AUDIT_HMAC_KEY: TEST_HMAC_KEY,
     NODE_ENV: "test",
     REQUEST_TIMEOUT_MS: 5_000,
     ...overrides,
@@ -26,9 +29,7 @@ function makeConfig(overrides: Partial<Config> = {}): Config {
 }
 
 class StubFhirClient implements FhirClient {
-  constructor(
-    private readonly impl: Partial<FhirClient> = {},
-  ) {}
+  constructor(private readonly impl: Partial<FhirClient> = {}) {}
 
   getPatient(patientId: string): Promise<Patient> {
     if (this.impl.getPatient) {
@@ -63,7 +64,7 @@ describe("audit logger", () => {
     await rm(tmp, { recursive: true, force: true });
   });
 
-  it("writes one line per record with hashed patient id and no PHI", async () => {
+  it("writes one line per record with HMAC patient id and no PHI", async () => {
     const file = path.join(tmp, "audit.log");
     const audit = new AuditLogger(
       makeConfig({ NODE_ENV: "development", AUDIT_LOG_FILE: file }),
@@ -71,7 +72,7 @@ describe("audit logger", () => {
 
     await audit.record({
       tool: "get_patient",
-      patient_id_hash: hashPatientId("smart-12345"),
+      patient_id: "smart-12345",
       caller_identity: "test",
       request_id: "req-1",
       status: "success",
@@ -87,9 +88,20 @@ describe("audit logger", () => {
       request_id: "req-1",
       status: "success",
     });
-    expect(parsed.patient_id_hash).toBe(hashPatientId("smart-12345"));
+    expect(parsed.patient_id_hmac).toBe(audit.hmac("smart-12345"));
     expect(line).not.toContain("smart-12345");
+    expect(line).not.toContain('"patient_id"');
     expect(typeof parsed.timestamp).toBe("string");
+  });
+
+  it("HMAC depends on the configured key", async () => {
+    const auditA = new AuditLogger(
+      makeConfig({ AUDIT_HMAC_KEY: "a".repeat(64) }),
+    );
+    const auditB = new AuditLogger(
+      makeConfig({ AUDIT_HMAC_KEY: "b".repeat(64) }),
+    );
+    expect(auditA.hmac("same-id")).not.toBe(auditB.hmac("same-id"));
   });
 
   it("falls back to stdout when the file sink fails", async () => {
@@ -104,7 +116,7 @@ describe("audit logger", () => {
 
     await audit.record({
       tool: "get_patient",
-      patient_id_hash: "h",
+      patient_id: "smart-12345",
       caller_identity: "t",
       request_id: "r",
       status: "success",
@@ -120,16 +132,18 @@ describe("audit logger", () => {
 describe("tools", () => {
   let tmp: string;
   let auditFile: string;
+  let audit: AuditLogger;
 
   async function makeDeps(client: FhirClient): Promise<ToolDeps> {
     const config = makeConfig({
       NODE_ENV: "development",
       AUDIT_LOG_FILE: auditFile,
     });
+    audit = new AuditLogger(config);
     return {
       config,
       fhir: client,
-      audit: new AuditLogger(config),
+      audit,
     };
   }
 
@@ -164,13 +178,16 @@ describe("tools", () => {
     const result = await getPatient({ patient_id: "smart-12345" }, deps);
     expect(result).toBe(patient);
 
-    const audit = await readAuditLines();
-    expect(audit).toHaveLength(1);
-    expect(audit[0]).toMatchObject({
+    const lines = await readAuditLines();
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({
       tool: "get_patient",
       status: "success",
-      patient_id_hash: hashPatientId("smart-12345"),
+      patient_id_hmac: audit.hmac("smart-12345"),
     });
+    // The plaintext id never appears in the serialized line.
+    const raw = (await readFile(auditFile, "utf8")).trim();
+    expect(raw).not.toContain("smart-12345");
   });
 
   it("get_patient surfaces FHIR errors and audits an error code", async () => {
@@ -186,11 +203,12 @@ describe("tools", () => {
       getPatient({ patient_id: "unknown-1" }, deps),
     ).rejects.toBeInstanceOf(FhirError);
 
-    const audit = await readAuditLines();
-    expect(audit[0]).toMatchObject({
+    const lines = await readAuditLines();
+    expect(lines[0]).toMatchObject({
       tool: "get_patient",
       status: "error",
       error_code: "fhir_404",
+      patient_id_hmac: audit.hmac("unknown-1"),
     });
   });
 
@@ -213,10 +231,11 @@ describe("tools", () => {
     );
     expect(result).toEqual([obs]);
 
-    const audit = await readAuditLines();
-    expect(audit[0]).toMatchObject({
+    const lines = await readAuditLines();
+    expect(lines[0]).toMatchObject({
       tool: "search_observations",
       status: "success",
+      patient_id_hmac: audit.hmac("smart-12345"),
     });
   });
 
@@ -234,16 +253,14 @@ describe("tools", () => {
       }),
     );
 
-    const result = await getMedicationList(
-      { patient_id: "smart-12345" },
-      deps,
-    );
+    const result = await getMedicationList({ patient_id: "smart-12345" }, deps);
     expect(result).toEqual([med]);
 
-    const audit = await readAuditLines();
-    expect(audit[0]).toMatchObject({
+    const lines = await readAuditLines();
+    expect(lines[0]).toMatchObject({
       tool: "get_medication_list",
       status: "success",
+      patient_id_hmac: audit.hmac("smart-12345"),
     });
   });
 
@@ -258,8 +275,8 @@ describe("tools", () => {
 
     await expect(getPatient({ patient_id: "x" }, deps)).rejects.toThrow("boom");
 
-    const audit = await readAuditLines();
-    expect(audit[0]).toMatchObject({
+    const lines = await readAuditLines();
+    expect(lines[0]).toMatchObject({
       status: "error",
       error_code: "internal_error",
     });

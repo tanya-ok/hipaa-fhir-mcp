@@ -105,13 +105,15 @@ async function main(): Promise<void> {
 
 process.on("unhandledRejection", (reason) => {
   process.stderr.write(
-    `fatal: unhandled rejection: ${reason instanceof Error ? reason.stack ?? reason.message : String(reason)}\n`,
+    `fatal: unhandled rejection: ${reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)}\n`,
   );
   process.exit(1);
 });
 
 process.on("uncaughtException", (err) => {
-  process.stderr.write(`fatal: uncaught exception: ${err.stack ?? err.message}\n`);
+  process.stderr.write(
+    `fatal: uncaught exception: ${err.stack ?? err.message}\n`,
+  );
   process.exit(1);
 });
 

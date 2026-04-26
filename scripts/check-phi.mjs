@@ -28,7 +28,7 @@
 //   0 - clean
 //   1 - findings reported
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { argv, cwd, exit } from "node:process";
 
@@ -83,7 +83,7 @@ const RULES = [
   {
     id: "email-non-allowlisted",
     description: "Email address with a non-allowlisted domain",
-    regex: /\b[a-zA-Z0-9._%+\-]+@([a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g,
+    regex: /\b[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/g,
     inspect: (groups) => {
       const domain = groups[1].toLowerCase();
       const parts = domain.split(".");
@@ -130,9 +130,7 @@ function scanFile(path) {
   for (const rule of RULES) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      rule.regex.lastIndex = 0;
-      let m;
-      while ((m = rule.regex.exec(line)) !== null) {
+      for (const m of line.matchAll(rule.regex)) {
         if (rule.inspect && !rule.inspect(m)) continue;
         findings.push({
           path: relative(ROOT, path),
@@ -153,18 +151,24 @@ function main() {
   for (const path of walk(ROOT)) findings.push(...scanFile(path));
 
   if (findings.length === 0) {
-    console.log(`PHI sweep clean: 0 findings under ${relative(cwd(), ROOT) || "."}`);
+    console.log(
+      `PHI sweep clean: 0 findings under ${relative(cwd(), ROOT) || "."}`,
+    );
     return 0;
   }
 
   console.error(`PHI sweep found ${findings.length} candidate issue(s):`);
   for (const f of findings) {
-    console.error(`  ${f.path}:${f.line}:${f.col}  [${f.rule}]  ${f.description}`);
+    console.error(
+      `  ${f.path}:${f.line}:${f.col}  [${f.rule}]  ${f.description}`,
+    );
     console.error(`    matched: ${f.matched}`);
   }
   console.error("");
   console.error("Each finding is a candidate, not a confirmed leak.");
-  console.error("If the value is a public reference that should be exempt, update the allowlist in scripts/check-phi.mjs.");
+  console.error(
+    "If the value is a public reference that should be exempt, update the allowlist in scripts/check-phi.mjs.",
+  );
   return 1;
 }
 

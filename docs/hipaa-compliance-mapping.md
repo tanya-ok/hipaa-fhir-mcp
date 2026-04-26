@@ -19,7 +19,7 @@ For every row we distinguish two states:
 
 | Control | Standard | Prototype | Production |
 |---|---|---|---|
-| Record and examine activity | §164.312(b) | Structured JSON audit record for every tool invocation: `timestamp, tool, patient_id_hash, caller_identity, request_id, status, error_code`. PHI is excluded - `patient_id` is SHA-256 hashed before logging. Writes to stdout (production) or a local file (dev). | Stdout is collected by the container runtime into CloudWatch Logs with an infrequent-access retention policy. A metric filter on `status=error` feeds an alarm. CloudTrail captures KMS Decrypt and HealthLake DataAccess events to cross-reference against the application audit trail. |
+| Record and examine activity | §164.312(b) | Structured JSON audit record for every tool invocation: `timestamp, tool, patient_id_hmac, caller_identity, request_id, status, error_code`. PHI is excluded. `patient_id` is HMAC-SHA-256 hashed with a server-side secret (`AUDIT_HMAC_KEY`) before logging; plain SHA-256 would be reversible by enumeration if the id space were small or predictable, so the keyed HMAC is used instead. The hash is deterministic by design so audit lines and KMS decrypt logs cross-reference the same patient. Writes to stdout (production) or a local file (dev). | Stdout is collected by the container runtime into CloudWatch Logs with an infrequent-access retention policy and a 2-year retention floor. The HMAC key is sourced from a secrets manager (Secrets Manager / Vault / KMS-derived) at process start, never logged. A metric filter on `status=error` feeds an alarm. CloudTrail captures KMS Decrypt and HealthLake DataAccess events to cross-reference against the application audit trail. |
 
 ## §164.312(c) - Integrity
 

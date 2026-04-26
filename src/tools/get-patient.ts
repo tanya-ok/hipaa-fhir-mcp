@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import { type AuditInput, hashPatientId } from "../audit/logger.js";
+import type { AuditInput } from "../audit/logger.js";
 import { FhirError } from "../fhir/client.js";
 import type { Patient } from "../fhir/types.js";
 import type { ToolDeps } from "./types.js";
@@ -23,7 +23,7 @@ export async function getPatient(
 ): Promise<Patient> {
   const base: Omit<AuditInput, "status"> = {
     tool: "get_patient",
-    patient_id_hash: hashPatientId(input.patient_id),
+    patient_id: input.patient_id,
     caller_identity: deps.config.CALLER_IDENTITY,
     request_id: uuidv4(),
   };

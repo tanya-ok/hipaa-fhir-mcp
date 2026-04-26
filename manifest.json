@@ -1,0 +1,85 @@
+{
+  "manifest_version": "0.1",
+  "name": "hipaa-fhir-mcp",
+  "display_name": "HIPAA FHIR MCP",
+  "version": "0.3.0",
+  "description": "HIPAA-aligned MCP server exposing three FHIR R4 tools with HMAC-keyed audit logging.",
+  "long_description": "Exposes get_patient, search_observations, and get_medication_list to Claude. Implements the §164.312(b) audit invariant: every tool call emits one structured JSON record where the patient id is HMAC-SHA-256 hashed with a server-side secret before it is written. Plaintext patient ids are never logged. Defaults to the public synthetic SMART sandbox at https://r4.smarthealthit.org. Stubs for SMART OAuth, SPIFFE workload identity, and KMS envelope encryption document the production path without faking compliance.",
+  "author": {
+    "name": "Tanya Babitskaya",
+    "url": "https://github.com/tanya-ok"
+  },
+  "homepage": "https://github.com/tanya-ok/hipaa-fhir-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tanya-ok/hipaa-fhir-mcp.git"
+  },
+  "license": "MIT",
+  "keywords": ["mcp", "fhir", "hipaa", "healthcare", "audit"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/server.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/server.js"],
+      "env": {
+        "FHIR_BASE_URL": "${user_config.fhir_base_url}",
+        "CALLER_IDENTITY": "${user_config.caller_identity}",
+        "AUDIT_HMAC_KEY": "${user_config.audit_hmac_key}",
+        "NODE_ENV": "production",
+        "AUDIT_LOG_FILE": "${user_config.audit_log_file}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "get_patient",
+      "description": "Fetch a FHIR R4 Patient resource by id."
+    },
+    {
+      "name": "search_observations",
+      "description": "Search FHIR R4 Observations for a patient by LOINC code."
+    },
+    {
+      "name": "get_medication_list",
+      "description": "Fetch active MedicationRequest resources for a patient."
+    }
+  ],
+  "user_config": {
+    "fhir_base_url": {
+      "type": "string",
+      "title": "FHIR Base URL",
+      "description": "FHIR R4 server base URL. Default is the public synthetic SMART sandbox.",
+      "default": "https://r4.smarthealthit.org",
+      "required": false
+    },
+    "caller_identity": {
+      "type": "string",
+      "title": "Caller Identity",
+      "description": "Tagged into every audit record. In production this is a SPIFFE SVID; locally any short identifier works.",
+      "default": "claude-desktop-local",
+      "required": false
+    },
+    "audit_hmac_key": {
+      "type": "string",
+      "title": "Audit HMAC key (32+ hex chars)",
+      "description": "Server-side secret for HMAC-SHA-256 of patient ids in audit records. Generate with: openssl rand -hex 32. In production source from a secrets manager. Stored encrypted via your OS keychain.",
+      "sensitive": true,
+      "required": true
+    },
+    "audit_log_file": {
+      "type": "string",
+      "title": "Audit log file (absolute path)",
+      "description": "Where structured audit records are appended. Use an absolute path. If empty, audit records go to stdout.",
+      "default": "",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
+  }
+}
