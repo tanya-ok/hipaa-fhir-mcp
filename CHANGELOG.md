@@ -8,6 +8,11 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Changed
+
+- Dependabot configuration: each ecosystem (npm, GitHub Actions, Docker) now produces at most one routine PR per week, bundling every update-type into a single group. Security advisories still open ad-hoc PRs.
+- TypeScript and zod major-version bumps are excluded from automatic Dependabot PRs and must be tackled deliberately. Documented in `.github/dependabot.yml`.
+
 ## [0.1.2] - 2026-04-26
 
 ### Added

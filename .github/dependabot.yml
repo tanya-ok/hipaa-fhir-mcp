@@ -1,4 +1,13 @@
 # Config docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Goal: at most one routine PR per ecosystem per week.
+# Each `groups` block bundles every update-type (major/minor/patch) into a
+# single PR. Security advisories still open ad-hoc PRs as soon as they land,
+# regardless of grouping.
+#
+# Major bumps that require deliberate migration work are listed under
+# `ignore` so Dependabot does not keep reopening them. Remove an entry
+# from `ignore` when ready to upgrade that package.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -8,19 +17,24 @@ updates:
       day: monday
       time: "07:00"
       timezone: Europe/Warsaw
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     labels: [dependencies]
     commit-message:
       prefix: chore
-      prefix-development: chore
       include: scope
     groups:
-      production-dependencies:
-        dependency-type: production
-        update-types: [minor, patch]
-      development-dependencies:
-        dependency-type: development
-        update-types: [minor, patch]
+      npm-all:
+        patterns: ["*"]
+        update-types: [major, minor, patch]
+    ignore:
+      # TypeScript 6.x removes type globals in a way that breaks the current
+      # tsconfig + @types/node combination. Re-evaluate when adopting TS 6
+      # deliberately (will need `types: ["node"]` in tsconfig and a code pass).
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # zod 4 has API and error-shape changes. Run the migration deliberately.
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
@@ -29,11 +43,15 @@ updates:
       day: monday
       time: "07:00"
       timezone: Europe/Warsaw
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 5
     labels: [github-actions]
     commit-message:
       prefix: ci
       include: scope
+    groups:
+      github-actions-all:
+        patterns: ["*"]
+        update-types: [major, minor, patch]
 
   - package-ecosystem: docker
     directory: /
@@ -47,3 +65,7 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    groups:
+      docker-all:
+        patterns: ["*"]
+        update-types: [major, minor, patch]
