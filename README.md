@@ -90,13 +90,13 @@ Every invocation emits a structured audit record:
 ## Requirements
 
 - Node.js 25+
-- npm, pnpm, or yarn
+- pnpm 10 (Corepack picks up the version pinned in `package.json`; run `corepack enable` once if you have not already)
 
 ## Install
 
 ```fish
 cd hipaa-fhir-mcp
-npm install
+pnpm install
 cp .env.example .env   # tweak AUDIT_LOG_FILE, CALLER_IDENTITY if you want
 ```
 
@@ -104,16 +104,16 @@ cp .env.example .env   # tweak AUDIT_LOG_FILE, CALLER_IDENTITY if you want
 
 ```fish
 # One-shot, no build needed:
-npx tsx src/server.ts
+pnpm dev
 
-# Or via the npm script:
-npm run dev
+# Or directly:
+pnpm exec tsx src/server.ts
 ```
 
 The server talks MCP over stdio. To exercise it from a terminal, use the MCP Inspector:
 
 ```fish
-npx @modelcontextprotocol/inspector npx tsx src/server.ts
+pnpm dlx @modelcontextprotocol/inspector pnpm exec tsx src/server.ts
 ```
 
 The SMART sandbox cycles its data periodically, so hard-coded patient ids go stale. Pull a current id with:
@@ -126,21 +126,24 @@ curl -s "https://r4.smarthealthit.org/Patient?_count=1&_elements=id" \
 ## Build and test
 
 ```fish
-npm run typecheck
-npm run test
-npm run build
+pnpm typecheck
+pnpm test
+pnpm build
 ```
 
 ## Connect to Claude Desktop
 
-Add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+For a step-by-step walkthrough that takes the prototype from a clean clone through MCP Inspector to a working Claude Desktop session, with a live audit-log trace and a no-PHI verification, see [`docs/demo.md`](docs/demo.md).
+
+Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
   "mcpServers": {
     "hipaa-fhir-mcp": {
-      "command": "npx",
+      "command": "/absolute/path/to/pnpm",
       "args": [
+        "exec",
         "tsx",
         "/absolute/path/to/hipaa-fhir-mcp/src/server.ts"
       ],
@@ -154,6 +157,8 @@ Add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (m
   }
 }
 ```
+
+Use absolute paths. macOS GUI apps do not always inherit your shell `PATH`, so a bare `pnpm` may not resolve. Run `which pnpm` and paste the result into `command`.
 
 Restart Claude Desktop. The three tools appear under the server name in the tools menu.
 
@@ -210,11 +215,11 @@ This repository runs the following automated checks on every push and pull reque
 | Check | What it does | Workflow |
 |---|---|---|
 | Typecheck / test / build | Catches broken code. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
-| `npm audit --audit-level=moderate` | Fails on `moderate` or higher dependency vulnerabilities. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| `pnpm audit --audit-level moderate` | Fails on `moderate` or higher dependency vulnerabilities. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | PHI sweep | Scans the working tree for SSN-, US-phone-, and non-allowlisted-email shapes. Enforces the no-PHI claim made elsewhere in this repo. | [`scripts/check-phi.mjs`](scripts/check-phi.mjs) |
 | CodeQL | GitHub-native static analysis for JS/TS with the `security-extended` query pack. | [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) |
 | gitleaks | Full-history secret-shape scan on every push and pull request. | [`.github/workflows/gitleaks.yml`](.github/workflows/gitleaks.yml) |
-| Dependabot | Weekly grouped PRs for npm, GitHub Actions, and Docker. Security alerts open ad-hoc. | [`.github/dependabot.yml`](.github/dependabot.yml) |
+| Dependabot | Weekly grouped PRs for pnpm, GitHub Actions, and Docker. Security alerts open ad-hoc. | [`.github/dependabot.yml`](.github/dependabot.yml) |
 
 What the PHI sweep catches and explicitly does not catch is in [`docs/security-automation.md`](docs/security-automation.md).
 
