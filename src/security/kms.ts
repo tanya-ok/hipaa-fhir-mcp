@@ -22,8 +22,14 @@ export interface EnvelopeCiphertext {
 }
 
 export interface EnvelopeCrypto {
-  encrypt(plaintext: Buffer, encryptionContext: Record<string, string>): Promise<EnvelopeCiphertext>;
-  decrypt(payload: EnvelopeCiphertext, encryptionContext: Record<string, string>): Promise<Buffer>;
+  encrypt(
+    plaintext: Buffer,
+    encryptionContext: Record<string, string>,
+  ): Promise<EnvelopeCiphertext>;
+  decrypt(
+    payload: EnvelopeCiphertext,
+    encryptionContext: Record<string, string>,
+  ): Promise<Buffer>;
 }
 
 export class KmsEnvelopeCrypto implements EnvelopeCrypto {

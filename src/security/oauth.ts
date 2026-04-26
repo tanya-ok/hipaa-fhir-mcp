@@ -54,15 +54,17 @@ export class SmartOnFhirClient {
 
   // TODO(prod): GET `${fhirBaseUrl}/.well-known/smart-configuration`.
   async discover(): Promise<SmartConfig> {
-    throw new NotImplementedInPrototype(
-      "SMART discovery",
-      this.fhirBaseUrl,
-    );
+    throw new NotImplementedInPrototype("SMART discovery", this.fhirBaseUrl);
   }
 
   // TODO(prod): build the authorize URL with client_id, redirect_uri,
   // scope, state, aud, code_challenge, code_challenge_method=S256.
-  buildAuthorizeUrl(_config: SmartConfig, _scope: string, _state: string, _pkce: PkcePair): string {
+  buildAuthorizeUrl(
+    _config: SmartConfig,
+    _scope: string,
+    _state: string,
+    _pkce: PkcePair,
+  ): string {
     throw new NotImplementedInPrototype(
       "authorize URL construction",
       `${this.clientId}@${this.redirectUri}`,

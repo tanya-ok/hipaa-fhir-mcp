@@ -19,8 +19,8 @@ No PHI is involved. The walkthrough talks to the public SMART sandbox at
 | Claim | Evidence |
 |---|---|
 | The three MCP tools work end to end | Inspector returns a real `Patient` resource, Desktop calls them from natural-language prompts |
-| Patient ids never land in logs | `grep` for the id in the audit file returns nothing; only the SHA-256 hash is present |
-| Each tool call emits a structured audit record | T2 grows by one JSON line per call, with `tool`, `patient_id_hash`, `caller_identity`, `request_id`, `status` |
+| Patient ids never land in logs | `grep` for the id in the audit file returns nothing; only the keyed HMAC-SHA-256 digest is present |
+| Each tool call emits a structured audit record | T2 grows by one JSON line per call, with `tool`, `patient_id_hmac`, `caller_identity`, `request_id`, `status` |
 | Claude Desktop can use the server through MCP | The three tools appear in the Desktop tools menu under `hipaa-fhir-mcp` |
 
 ## Prerequisites
@@ -41,11 +41,12 @@ From the repo root:
 cp .env.example .env
 ```
 
-Open `.env` and set these two values (uncomment `AUDIT_LOG_FILE`):
+Open `.env` and set these values. The shipped `AUDIT_HMAC_KEY` is a demo zero-key that lets the prototype run; replace it with the output of `openssl rand -hex 32` for anything beyond a sandbox-only walkthrough.
 
 ```
 AUDIT_LOG_FILE=./audit-demo.log
 CALLER_IDENTITY=demo-inspector
+AUDIT_HMAC_KEY=0000000000000000000000000000000000000000000000000000000000000000
 ```
 
 `NODE_ENV` defaults to `development`, which is what the file sink in
@@ -93,10 +94,10 @@ The first Inspector call from Step 3 already produced one line. It looks
 like this:
 
 ```json
-{"timestamp":"2026-04-26T17:42:11.812Z","tool":"get_patient","patient_id_hash":"9b74c989...","caller_identity":"demo-inspector","request_id":"a3e1b8c2-...","status":"success"}
+{"timestamp":"2026-04-26T17:42:11.812Z","tool":"get_patient","patient_id_hmac":"9b74c989...","caller_identity":"demo-inspector","request_id":"a3e1b8c2-...","status":"success"}
 ```
 
-Note the field is `patient_id_hash`, not `patient_id`. The plaintext id
+Note the field is `patient_id_hmac`, not `patient_id`. The keyed HMAC depends on `AUDIT_HMAC_KEY`, so logs from instances configured with different keys are not cross-referenceable. The plaintext id
 never appears. Confirm:
 
 ```fish
@@ -114,7 +115,7 @@ Still in Inspector, run:
 | `search_observations` | `patient_id` = `<PATIENT_ID>`, `code` = `http://loinc.org\|8867-4` (heart rate) |
 | `get_medication_list` | `patient_id` = `<PATIENT_ID>` |
 
-T2 grows by one line per call. Each carries the same `patient_id_hash`
+T2 grows by one line per call. Each carries the same `patient_id_hmac`
 because the same id was used.
 
 When you are ready to move to Claude Desktop, stop Inspector with
@@ -177,7 +178,7 @@ appends one or more audit lines with `caller_identity: "demo-desktop"`.
 | List active medications for patient `<PATIENT_ID>`. | `get_medication_list` |
 
 Replace `<PATIENT_ID>` with the value from Step 2. After the third
-prompt, T2 holds three new lines, each with the SHA-256 hash of the id
+prompt, T2 holds three new lines, each with the keyed HMAC of the id
 and `status: "success"`.
 
 If a tool call fails (network blip, expired patient id), the audit

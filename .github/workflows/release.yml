@@ -1,0 +1,62 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 25
+          cache: pnpm
+
+      - name: Install with full deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build dist
+        run: pnpm build
+
+      - name: PHI sweep
+        run: pnpm check:phi
+
+      - name: Prune dev dependencies
+        run: pnpm prune --prod
+
+      - name: Validate manifest
+        run: pnpm dlx @anthropic-ai/mcpb validate manifest.json
+
+      - name: Pack MCPB extension
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          pnpm dlx @anthropic-ai/mcpb pack . "hipaa-fhir-mcp-${VERSION}.mcpb"
+          ls -lh hipaa-fhir-mcp-*.mcpb
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: hipaa-fhir-mcp-*.mcpb
+          generate_release_notes: true
+          draft: false
+          prerelease: false
