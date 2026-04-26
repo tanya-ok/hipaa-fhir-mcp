@@ -54,7 +54,7 @@ jobs:
           ls -lh hipaa-fhir-mcp-*.mcpb
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: hipaa-fhir-mcp-*.mcpb
           generate_release_notes: true
