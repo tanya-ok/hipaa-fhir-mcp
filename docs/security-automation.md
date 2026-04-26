@@ -35,7 +35,7 @@ The repository's central claim is that no Protected Health Information is ever p
 | Generic medical record numbers | No universal format; flagging would be guesswork. |
 | Diagnosis or terminology codes (ICD-10, SNOMED CT, LOINC) | Public reference data, not PHI. |
 
-The narrower the check, the higher its signal-to-noise ratio. The categories above are addressed instead by the broader controls in [`hipaa-compliance-mapping.md`](hipaa-compliance-mapping.md), the SHA-256 hashing in `src/audit/logger.ts`, and the structural fact that this repository only ever talks to a public synthetic sandbox.
+The narrower the check, the higher its signal-to-noise ratio. The categories above are addressed instead by the broader controls in [`hipaa-compliance-mapping.md`](hipaa-compliance-mapping.md), the keyed HMAC-SHA-256 hashing in `src/audit/logger.ts` (using `AUDIT_HMAC_KEY`), and the structural fact that this repository only ever talks to a public synthetic sandbox.
 
 ### Running it
 
