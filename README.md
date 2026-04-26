@@ -203,6 +203,21 @@ hipaa-fhir-mcp/
 └── README.md
 ```
 
+## Security automation
+
+This repository runs the following automated checks on every push and pull request, plus a weekly schedule for the static-analysis job:
+
+| Check | What it does | Workflow |
+|---|---|---|
+| Typecheck / test / build | Catches broken code. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| `npm audit --audit-level=moderate` | Fails on `moderate` or higher dependency vulnerabilities. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| PHI sweep | Scans the working tree for SSN-, US-phone-, and non-allowlisted-email shapes. Enforces the no-PHI claim made elsewhere in this repo. | [`scripts/check-phi.mjs`](scripts/check-phi.mjs) |
+| CodeQL | GitHub-native static analysis for JS/TS with the `security-extended` query pack. | [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) |
+| gitleaks | Full-history secret-shape scan on every push and pull request. | [`.github/workflows/gitleaks.yml`](.github/workflows/gitleaks.yml) |
+| Dependabot | Weekly grouped PRs for npm, GitHub Actions, and Docker. Security alerts open ad-hoc. | [`.github/dependabot.yml`](.github/dependabot.yml) |
+
+What the PHI sweep catches and explicitly does not catch is in [`docs/security-automation.md`](docs/security-automation.md).
+
 ## Versioning
 
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are tagged `vX.Y.Z` and tracked in [`CHANGELOG.md`](CHANGELOG.md).

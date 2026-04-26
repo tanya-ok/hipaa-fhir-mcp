@@ -35,3 +35,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+
+      - name: PHI sweep
+        run: npm run check:phi

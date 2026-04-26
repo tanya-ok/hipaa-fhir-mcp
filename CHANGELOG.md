@@ -8,6 +8,19 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-04-26
+
+### Added
+
+- CodeQL workflow with the `security-extended` query pack for JavaScript/TypeScript (`.github/workflows/codeql.yml`).
+- gitleaks workflow scanning the full git history on every push and pull request (`.github/workflows/gitleaks.yml`).
+- Dependabot configuration with weekly grouped PRs for npm, GitHub Actions, and Docker base images, plus ad-hoc PRs from security advisories (`.github/dependabot.yml`).
+- `npm audit --audit-level=moderate` step in CI to fail-fast on dependency regressions.
+- PHI sweep script (`scripts/check-phi.mjs`) that scans the working tree for SSN-, US-phone-, and non-allowlisted-email shapes. Run via `npm run check:phi` and on every CI run. Enforces the no-PHI claim for the patterns it covers.
+- `docs/security-automation.md` documenting what the PHI sweep catches and explicitly does not catch, plus the repo-settings checklist.
+- README "Security automation" section indexing the above.
+- `npm run audit` and `npm run check:phi` scripts.
+
 ## [0.1.1] - 2026-04-26
 
 ### Security
@@ -36,6 +49,7 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
-[Unreleased]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.2
 [0.1.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.0
