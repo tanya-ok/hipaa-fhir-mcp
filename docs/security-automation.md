@@ -11,7 +11,7 @@ This document explains the security automation that runs on this repository, wit
 | PHI sweep | See below. | `scripts/check-phi.mjs`, run from `.github/workflows/ci.yml` |
 | CodeQL | GitHub-native static analysis for JavaScript/TypeScript with the `security-extended` query pack. Runs on push, PR, and weekly on a schedule. | `.github/workflows/codeql.yml` |
 | gitleaks | Scans the full git history for secret-shaped strings on every push and PR. | `.github/workflows/gitleaks.yml` |
-| Dependabot | Weekly grouped PRs for the pnpm, GitHub Actions, and Docker ecosystems. Security alerts open ad-hoc PRs as soon as advisories land. | `.github/dependabot.yml` |
+| Dependabot | Weekly grouped PRs for the npm, GitHub Actions, and Docker ecosystems. The `npm` ecosystem reads `pnpm-lock.yaml`; Dependabot has no dedicated `pnpm` ecosystem yet. Security alerts open ad-hoc PRs as soon as advisories land. | `.github/dependabot.yml` |
 
 ## PHI sweep (`scripts/check-phi.mjs`)
 

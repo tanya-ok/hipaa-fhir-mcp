@@ -219,7 +219,7 @@ This repository runs the following automated checks on every push and pull reque
 | PHI sweep | Scans the working tree for SSN-, US-phone-, and non-allowlisted-email shapes. Enforces the no-PHI claim made elsewhere in this repo. | [`scripts/check-phi.mjs`](scripts/check-phi.mjs) |
 | CodeQL | GitHub-native static analysis for JS/TS with the `security-extended` query pack. | [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) |
 | gitleaks | Full-history secret-shape scan on every push and pull request. | [`.github/workflows/gitleaks.yml`](.github/workflows/gitleaks.yml) |
-| Dependabot | Weekly grouped PRs for pnpm, GitHub Actions, and Docker. Security alerts open ad-hoc. | [`.github/dependabot.yml`](.github/dependabot.yml) |
+| Dependabot | Weekly grouped PRs for the npm (reads `pnpm-lock.yaml`), GitHub Actions, and Docker ecosystems. Security alerts open ad-hoc. | [`.github/dependabot.yml`](.github/dependabot.yml) |
 
 What the PHI sweep catches and explicitly does not catch is in [`docs/security-automation.md`](docs/security-automation.md).
 
