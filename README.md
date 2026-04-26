@@ -24,7 +24,7 @@ The point is not to ship a compliant system. The point is to make the gap betwee
 
 | | |
 |---|---|
-| **In scope** | §164.312(a)(2)(iv) encryption, §164.312(b) audit controls (structured JSON, SHA-256 patient id hashing, no PHI in logs), §164.312(e) transmission security (TLS), and stubs for the production path: SMART OAuth 2.1 + PKCE, SPIFFE SVID workload identity, KMS envelope encryption. |
+| **In scope** | §164.312(a)(2)(iv) encryption, §164.312(b) audit controls (structured JSON, HMAC-SHA-256 patient id hashing with a server-side secret, no PHI in logs), §164.312(e) transmission security (TLS), and stubs for the production path: SMART OAuth 2.1 + PKCE, SPIFFE SVID workload identity, KMS envelope encryption. |
 | **Not in scope** | Administrative and Physical safeguards - those are organizational controls. A real BAA with AWS and any downstream LLM provider. Production SMART/SPIFFE/KMS wiring (stubs only). |
 | **Data** | Public, synthetic sandbox at `https://r4.smarthealthit.org`. **No PHI** is ever touched by this prototype. |
 
@@ -44,7 +44,7 @@ The prototype deliberately does not ship with fake production posture. Treating 
      │                                     │
      │  ┌────────────┐  ┌───────────────┐  │
      │  │ tools/     │  │ audit/logger  │──┼──► stdout → CloudWatch
-     │  │            │  │ (SHA-256 id)  │  │
+     │  │            │  │ (HMAC-SHA-256)│  │
      │  └─────┬──────┘  └───────────────┘  │
      │        │                            │
      │        ▼                            │
@@ -78,14 +78,14 @@ Every invocation emits a structured audit record:
 {
   "timestamp": "2026-04-21T10:15:03.123Z",
   "tool": "get_patient",
-  "patient_id_hash": "9b74c9897bac770ffc029102a200c5de...",
+  "patient_id_hmac": "9b74c9897bac770ffc029102a200c5de...",
   "caller_identity": "local-dev",
   "request_id": "a3e1...",
   "status": "success"
 }
 ```
 
-`patient_id` is never written to any log - only its SHA-256 hash.
+`patient_id` is never written to any log. The audit record stores only an HMAC-SHA-256 of the id, computed with a server-side secret (`AUDIT_HMAC_KEY`). Plain SHA-256 would be reversible by enumeration if the id space were small or predictable; the keyed HMAC closes that gap. The hash is deterministic by design, which lets audit lines and KMS decrypt logs cross-reference the same patient via `kms:EncryptionContext`. Anyone with read access to the audit log can therefore count requests per patient, but cannot reverse to the plaintext id; the mitigation is access control on the log stream, not the hash.
 
 ## Requirements
 
@@ -99,6 +99,15 @@ cd hipaa-fhir-mcp
 pnpm install
 cp .env.example .env   # tweak AUDIT_LOG_FILE, CALLER_IDENTITY if you want
 ```
+
+The required env vars are:
+
+| Var | Purpose |
+|---|---|
+| `AUDIT_HMAC_KEY` | Server-side secret (32+ hex chars) for HMAC of patient ids in the audit log. Generate with `openssl rand -hex 32`. The `.env.example` ships a demo-only zero-key so the prototype runs against the public sandbox out of the box; replace it for anything real. |
+| `FHIR_BASE_URL` | FHIR R4 server. Defaults to the public SMART sandbox. |
+| `CALLER_IDENTITY` | Stamped into every audit record. In production this is a SPIFFE SVID; in dev any short string. |
+| `AUDIT_LOG_FILE` | Optional file sink for audit records in development. If unset, audit records go to stdout. |
 
 ## Run locally
 
@@ -129,27 +138,42 @@ curl -s "https://r4.smarthealthit.org/Patient?_count=1&_elements=id" \
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm check          # Biome lint + format check
+pnpm check:fix      # apply Biome fixes
+pnpm check:phi      # PHI shape sweep
 ```
 
-## Connect to Claude Desktop
+## Install in Claude Desktop
 
-For a step-by-step walkthrough that takes the prototype from a clean clone through MCP Inspector to a working Claude Desktop session, with a live audit-log trace and a no-PHI verification, see [`docs/demo.md`](docs/demo.md).
+Two paths. The native extension is the right choice for end users; the manual config is for active development.
 
-Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+### Option A: native extension (`.mcpb`)
+
+1. Download `hipaa-fhir-mcp-X.Y.Z.mcpb` from the [latest release](https://github.com/tanya-ok/hipaa-fhir-mcp/releases/latest).
+2. In Claude Desktop: `Settings -> Extensions -> Install Extension...` and select the file.
+3. The form prompts for four values: FHIR base URL, caller identity, audit HMAC key (required), audit log file path. The HMAC key is stored encrypted via your OS keychain. Generate one with `openssl rand -hex 32`. The other three have working defaults for the public sandbox.
+4. Restart Claude Desktop. The three tools appear in the tools menu under `hipaa-fhir-mcp`.
+
+The extension uses Claude Desktop's bundled Node runtime, so no system-level Node install is required.
+
+### Option B: manual config (development)
+
+For a step-by-step walkthrough that takes the prototype from a clean clone through MCP Inspector to a working Desktop session, with a live audit-log trace and a no-PHI verification, see [`docs/demo.md`](docs/demo.md).
+
+Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows). Replace the absolute paths with values from your machine:
 
 ```json
 {
   "mcpServers": {
     "hipaa-fhir-mcp": {
-      "command": "/absolute/path/to/pnpm",
+      "command": "/absolute/path/to/node",
       "args": [
-        "exec",
-        "tsx",
-        "/absolute/path/to/hipaa-fhir-mcp/src/server.ts"
+        "/absolute/path/to/hipaa-fhir-mcp/dist/server.js"
       ],
       "env": {
         "FHIR_BASE_URL": "https://r4.smarthealthit.org",
         "CALLER_IDENTITY": "claude-desktop-local",
+        "AUDIT_HMAC_KEY": "<paste-output-of-openssl-rand-hex-32>",
         "NODE_ENV": "development",
         "AUDIT_LOG_FILE": "/absolute/path/to/hipaa-fhir-mcp/audit-claude.log"
       }
@@ -158,7 +182,9 @@ Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop
 }
 ```
 
-Use absolute paths. macOS GUI apps do not always inherit your shell `PATH`, so a bare `pnpm` may not resolve. Run `which pnpm` and paste the result into `command`.
+Use absolute paths. macOS GUI apps do not always inherit your shell `PATH`, so a bare `node` may not resolve. Run `which node` (and follow with `readlink -f` if you use a version manager) and paste the result into `command`.
+
+Build first: `pnpm install && pnpm build` so `dist/server.js` exists.
 
 Restart Claude Desktop. The three tools appear under the server name in the tools menu.
 
@@ -170,7 +196,7 @@ A production deployment replaces the sandbox with AWS HealthLake and the stubs w
 - **Workload identity**: SPIRE Agent DaemonSet issues X.509 SVIDs over the Workload API socket. The pod SecurityContext mounts the socket read-only. `src/security/spiffe.ts` gets a gRPC Workload API client.
 - **User identity**: SMART-on-FHIR OAuth 2.1 + PKCE flow wired into `src/security/oauth.ts`. Access token passes in the `Authorization: Bearer` header; scopes bind the clinical context (`patient/*.rs`).
 - **Data path**: VPC interface endpoint for HealthLake (`com.amazonaws.eu-west-1.healthlake`). Endpoint policy restricts calls to the specific datastore ARN. Egress security group allows only the endpoint ENI.
-- **Encryption at rest**: any response cache goes through `src/security/kms.ts` (KMS envelope encryption with AES-256-GCM). CMK key policy grants `kms:Decrypt` only to the workload's IAM role, with `kms:EncryptionContext` binding tied to `patient_id_hash`.
+- **Encryption at rest**: any response cache goes through `src/security/kms.ts` (KMS envelope encryption with AES-256-GCM). CMK key policy grants `kms:Decrypt` only to the workload's IAM role, with `kms:EncryptionContext` binding tied to `patient_id_hmac`. Decrypts that do not match the expected context fail closed.
 - **Audit trail**: stdout → CloudWatch Logs, 2-year retention, metric filter on `status=error` into an alarm. CloudTrail captures `KMS.Decrypt` and `healthlake:ReadResource` for cross-reference.
 - **Transport to the MCP host**: MCP over stdio works inside the pod. For a remote MCP transport, terminate TLS at an Envoy sidecar with mTLS between Envoy and peers using the SPIFFE SVID.
 - **BAA**: required with AWS (HealthLake, KMS, CloudWatch) and with any LLM provider that sees tool outputs. The prototype does not talk to any LLM directly.
@@ -185,7 +211,7 @@ hipaa-fhir-mcp/
 │   ├── server.ts              # MCP server entry point (stdio transport)
 │   ├── config.ts              # zod-validated env, fails fast
 │   ├── audit/
-│   │   └── logger.ts          # structured audit log, SHA-256 id hashing
+│   │   └── logger.ts          # structured audit log, keyed HMAC-SHA-256 id hashing
 │   ├── fhir/
 │   │   ├── client.ts          # HTTP FHIR client (swappable for HealthLake)
 │   │   └── types.ts           # minimal FHIR R4 types
@@ -215,11 +241,12 @@ This repository runs the following automated checks on every push and pull reque
 | Check | What it does | Workflow |
 |---|---|---|
 | Typecheck / test / build | Catches broken code. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Biome lint + format check (`pnpm check`) | Enforces code style and catches a baseline of correctness rules. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | `pnpm audit --audit-level moderate` | Fails on `moderate` or higher dependency vulnerabilities. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | PHI sweep | Scans the working tree for SSN-, US-phone-, and non-allowlisted-email shapes. Enforces the no-PHI claim made elsewhere in this repo. | [`scripts/check-phi.mjs`](scripts/check-phi.mjs) |
 | CodeQL | GitHub-native static analysis for JS/TS with the `security-extended` query pack. | [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) |
 | gitleaks | Full-history secret-shape scan on every push and pull request. | [`.github/workflows/gitleaks.yml`](.github/workflows/gitleaks.yml) |
-| Dependabot | Weekly grouped PRs for pnpm, GitHub Actions, and Docker. Security alerts open ad-hoc. | [`.github/dependabot.yml`](.github/dependabot.yml) |
+| Dependabot | Weekly grouped PRs for the npm (reads `pnpm-lock.yaml`), GitHub Actions, and Docker ecosystems. Security alerts open ad-hoc. | [`.github/dependabot.yml`](.github/dependabot.yml) |
 
 What the PHI sweep catches and explicitly does not catch is in [`docs/security-automation.md`](docs/security-automation.md).
 
