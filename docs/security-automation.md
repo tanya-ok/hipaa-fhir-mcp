@@ -7,11 +7,11 @@ This document explains the security automation that runs on this repository, wit
 | Check | What it does | Where it lives |
 |---|---|---|
 | Typecheck / test / build | Catches broken code on every push and PR. | `.github/workflows/ci.yml` |
-| `npm audit --audit-level=moderate` | Fails the build on `moderate` or higher dependency vulnerabilities. | `.github/workflows/ci.yml` |
+| `pnpm audit --audit-level moderate` | Fails the build on `moderate` or higher dependency vulnerabilities. | `.github/workflows/ci.yml` |
 | PHI sweep | See below. | `scripts/check-phi.mjs`, run from `.github/workflows/ci.yml` |
 | CodeQL | GitHub-native static analysis for JavaScript/TypeScript with the `security-extended` query pack. Runs on push, PR, and weekly on a schedule. | `.github/workflows/codeql.yml` |
 | gitleaks | Scans the full git history for secret-shaped strings on every push and PR. | `.github/workflows/gitleaks.yml` |
-| Dependabot | Weekly grouped PRs for npm, GitHub Actions, and Docker base images. Security alerts open ad-hoc PRs as soon as advisories land. | `.github/dependabot.yml` |
+| Dependabot | Weekly grouped PRs for the pnpm, GitHub Actions, and Docker ecosystems. Security alerts open ad-hoc PRs as soon as advisories land. | `.github/dependabot.yml` |
 
 ## PHI sweep (`scripts/check-phi.mjs`)
 
@@ -40,7 +40,7 @@ The narrower the check, the higher its signal-to-noise ratio. The categories abo
 ### Running it
 
 ```fish
-npm run check:phi
+pnpm check:phi
 # or
 node scripts/check-phi.mjs
 ```

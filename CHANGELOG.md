@@ -8,9 +8,14 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Added
+
+- `docs/demo.md`: end-to-end walkthrough that takes the prototype from a clean clone through MCP Inspector to a working Claude Desktop session, with a live audit-log trace and a no-PHI verification step. Linked from the README.
+
 ### Changed
 
-- Dependabot configuration: each ecosystem (npm, GitHub Actions, Docker) now produces at most one routine PR per week, bundling every update-type into a single group. Security advisories still open ad-hoc PRs.
+- Package manager: migrated from npm to pnpm. `pnpm-lock.yaml` is now the committed lockfile; `package-lock.json` removed. The pnpm version is pinned via the `packageManager` field in `package.json` and resolved through Corepack. Dockerfile, CI workflow, and Dependabot configuration updated. README, AGENTS.md, and `docs/security-automation.md` use pnpm commands.
+- Dependabot configuration: each ecosystem (pnpm, GitHub Actions, Docker) now produces at most one routine PR per week, bundling every update-type into a single group. Security advisories still open ad-hoc PRs.
 - TypeScript and zod major-version bumps are excluded from automatic Dependabot PRs and must be tackled deliberately. Documented in `.github/dependabot.yml`.
 
 ## [0.1.2] - 2026-04-26

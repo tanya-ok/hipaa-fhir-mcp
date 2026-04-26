@@ -5,12 +5,16 @@
 # single PR. Security advisories still open ad-hoc PRs as soon as they land,
 # regardless of grouping.
 #
+# This repo uses pnpm; Dependabot reads `pnpm-lock.yaml` via the `pnpm`
+# ecosystem. If the package manager ever changes, update the
+# `package-ecosystem` value below to match.
+#
 # Major bumps that require deliberate migration work are listed under
 # `ignore` so Dependabot does not keep reopening them. Remove an entry
 # from `ignore` when ready to upgrade that package.
 version: 2
 updates:
-  - package-ecosystem: npm
+  - package-ecosystem: pnpm
     directory: /
     schedule:
       interval: weekly
@@ -23,7 +27,7 @@ updates:
       prefix: chore
       include: scope
     groups:
-      npm-all:
+      pnpm-all:
         patterns: ["*"]
         update-types: [major, minor, patch]
     ignore:

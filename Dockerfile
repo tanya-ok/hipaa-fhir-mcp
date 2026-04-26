@@ -5,17 +5,20 @@ FROM node:25-alpine AS build
 
 WORKDIR /app
 
+# Activate the pnpm version pinned in package.json via Corepack
+RUN corepack enable
+
 # Install deps from lockfile for a reproducible build
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Compile TypeScript -> dist/
 COPY tsconfig.json ./
 COPY src ./src
-RUN npm run build
+RUN pnpm run build
 
 # Drop dev dependencies before copying node_modules into the runtime stage
-RUN npm prune --omit=dev
+RUN pnpm prune --prod
 
 
 # ---- runtime stage ---------------------------------------------------------
