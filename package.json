@@ -1,6 +1,6 @@
 {
   "name": "hipaa-fhir-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "HIPAA-oriented MCP server exposing FHIR R4 tools to AI agents",
   "license": "MIT",
   "type": "module",
@@ -23,15 +23,14 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "axios": "^1.7.7",
-    "uuid": "^11.0.3",
+    "uuid": "^14.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^25.0.0",
-    "@types/uuid": "^10.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.5"
+    "vitest": "^4.1.5"
   },
   "engines": {
     "node": ">=25.0.0"
