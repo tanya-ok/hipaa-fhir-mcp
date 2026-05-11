@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- build stage -----------------------------------------------------------
-FROM node:25-alpine AS build
+FROM node:26-alpine AS build
 
 # Build needs dev dependencies (TypeScript, vitest) so NODE_ENV is explicit
 # here; some tools (npm, pnpm, third-party post-installs) read it to decide
@@ -30,7 +30,7 @@ RUN pnpm prune --prod
 
 
 # ---- runtime stage ---------------------------------------------------------
-FROM node:25-alpine AS runtime
+FROM node:26-alpine AS runtime
 
 # Production defaults. The audit logger (src/audit/logger.ts) writes to stdout
 # when NODE_ENV=production so a CloudWatch agent or sidecar can pick it up.
