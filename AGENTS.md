@@ -12,14 +12,14 @@ It is a **prototype**, not a production system. The "HIPAA scope statement" tabl
 
 | | |
 |---|---|
-| Language | TypeScript (strict), ESM, Node.js 25+ |
+| Language | TypeScript (strict), ESM, Node.js 26+ |
 | MCP | `@modelcontextprotocol/sdk` over stdio |
 | HTTP | `axios` (TLS 1.2+ enforced) |
 | Validation | `zod` |
 | Test | `vitest` |
 | Build | `tsc` to `dist/` |
 
-Package manager: `pnpm` (lockfile `pnpm-lock.yaml` committed). The version is pinned in `package.json` via the `packageManager` field; Corepack picks it up automatically. Do not migrate to npm or yarn without an explicit ask.
+Package manager: `pnpm` (lockfile `pnpm-lock.yaml` committed). The version is pinned in `package.json` via the `packageManager` field; Corepack picks it up; since Node 25 it is not bundled, so install it with `npm install -g corepack`. Do not migrate to npm or yarn without an explicit ask.
 
 ## Commands
 

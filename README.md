@@ -89,8 +89,8 @@ Every invocation emits a structured audit record:
 
 ## Requirements
 
-- Node.js 25+
-- pnpm 10 (Corepack picks up the version pinned in `package.json`; run `corepack enable` once if you have not already)
+- Node.js 26+
+- pnpm 10 (Corepack picks up the version pinned in `package.json`; Node 25+ does not bundle it, so run `npm install -g corepack && corepack enable` once)
 
 ## Install
 
