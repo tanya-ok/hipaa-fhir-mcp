@@ -25,8 +25,8 @@ No PHI is involved. The walkthrough talks to the public SMART sandbox at
 
 ## Prerequisites
 
-- Node 25+
-- pnpm 10 (Corepack reads the version pinned in `package.json`; `corepack enable` once is enough)
+- Node 26+
+- pnpm 10 (Corepack reads the version pinned in `package.json`; Node 25+ does not bundle it, so run `npm install -g corepack && corepack enable` once)
 - `git clone` of this repo with `pnpm install` already run
 - Claude Desktop installed (macOS or Windows)
 - `python3` on `PATH` (only used to extract one field from a JSON response)

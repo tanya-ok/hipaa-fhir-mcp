@@ -8,6 +8,21 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Changed
+
+- Node.js 26 everywhere: Docker base image, CI and release workflows, `engines`, and the `.mcpb` manifest.
+- `actions/checkout` and `actions/setup-node` v7.
+- Dependencies updated within their major versions: `@modelcontextprotocol/sdk`, `axios`, `uuid`, `@biomejs/biome`, `@types/node` 26, `tsx`, `vitest`.
+
+### Fixed
+
+- Docker build: Node 25+ images no longer bundle Corepack, so `corepack enable` failed. The build installs Corepack 0.36.0 first.
+- CI and release workflows: `corepack enable` replaced with `pnpm/action-setup@v6`, which reads the pinned `packageManager`.
+
+### Security
+
+- Lockfile refresh clears all 65 open Dependabot alerts (`axios`, `hono`, `fast-uri`, `vite`, `qs`, `form-data` and others). `pnpm audit` is clean.
+
 ## [0.3.0] - 2026-04-26
 
 The 0.2.0 tag was created but never published as a release; 0.3.0 is the first artifact-attached release. It bundles the original 0.2.0 scope (pnpm migration, demo walkthrough, `.mcpb` distribution, Dockerfile NODE_ENV cleanup) with the audit-invariant upgrade to keyed HMAC.
