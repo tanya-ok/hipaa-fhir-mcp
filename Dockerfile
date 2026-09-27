@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- build stage -----------------------------------------------------------
-FROM node:25-alpine AS build
+FROM node:26-alpine AS build
 
 # Build needs dev dependencies (TypeScript, vitest) so NODE_ENV is explicit
 # here; some tools (npm, pnpm, third-party post-installs) read it to decide
@@ -10,8 +10,8 @@ ENV NODE_ENV=development
 
 WORKDIR /app
 
-# Activate the pnpm version pinned in package.json via Corepack
-RUN corepack enable
+# Node 25+ no longer bundles Corepack; it activates the pnpm pinned in package.json
+RUN npm install -g corepack@0.36.0 && corepack enable
 
 # Install deps from lockfile for a reproducible build
 COPY package.json pnpm-lock.yaml ./
@@ -30,7 +30,7 @@ RUN pnpm prune --prod
 
 
 # ---- runtime stage ---------------------------------------------------------
-FROM node:25-alpine AS runtime
+FROM node:26-alpine AS runtime
 
 # Production defaults. The audit logger (src/audit/logger.ts) writes to stdout
 # when NODE_ENV=production so a CloudWatch agent or sidecar can pick it up.
