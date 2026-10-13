@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 While the project is pre-1.0, breaking changes may occur in any minor release. See the [Versioning](README.md#versioning) section of the README for the policy.
 
-## [0.4.0] - Unreleased
+## [0.4.0] - 2026-10-13
 
 ### Added
 
@@ -117,7 +117,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
-[0.4.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.3.0
 [0.1.2]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.2
 [0.1.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.1
