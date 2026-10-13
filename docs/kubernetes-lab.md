@@ -8,8 +8,9 @@ excluded. The platform tools are CNCF-hosted projects.
 From the sibling `mcp-svid-auth` directory, run `make up` to launch the services or
 `make demo` for a fresh eighteen-scenario integration check. Use `make down` and
 `make runtime-stop` afterwards only if no sibling project needs the shared VM.
-Keep it running while CISO Assistance uses it. The VM is bounded to 2 CPUs and
-4 GiB guest memory.
+IT GRC (`it-grc`, not yet public) does not use this VM: it runs CISO Assistant
+Community edition in its own Lima VM and takes the lab demo report as input.
+The VM is bounded to 2 CPUs and 4 GiB guest memory.
 No service is published externally and no registry or GitHub push is required.
 
 ## Authentication and FHIR scope
