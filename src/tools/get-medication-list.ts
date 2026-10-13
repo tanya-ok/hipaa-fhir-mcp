@@ -1,18 +1,13 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { AuditInput } from "../audit/logger.js";
 import { FhirError } from "../fhir/client.js";
+import { PatientIdSchema } from "../fhir/schemas.js";
 import type { MedicationRequest } from "../fhir/types.js";
 import type { ToolDeps } from "./types.js";
 
 export const GetMedicationListInput = z.object({
-  patient_id: z
-    .string()
-    .min(1)
-    .max(128)
-    .regex(/^[A-Za-z0-9\-.]+$/, {
-      message: "patient_id must match FHIR id syntax",
-    }),
+  patient_id: PatientIdSchema,
 });
 
 export type GetMedicationListInputType = z.infer<typeof GetMedicationListInput>;
@@ -25,7 +20,7 @@ export async function getMedicationList(
     tool: "get_medication_list",
     patient_id: input.patient_id,
     caller_identity: deps.config.CALLER_IDENTITY,
-    request_id: uuidv4(),
+    request_id: randomUUID(),
   };
 
   try {

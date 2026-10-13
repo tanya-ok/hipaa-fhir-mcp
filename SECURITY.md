@@ -6,6 +6,10 @@ This repository is a **prototype**. It targets a public synthetic FHIR sandbox a
 
 The full compliance posture, including explicit gaps between the prototype and a production-ready system, is documented in [`docs/hipaa-compliance-mapping.md`](docs/hipaa-compliance-mapping.md). Treating the prototype as production-ready would itself be non-compliant.
 
+## Outbound credential handling
+
+The FHIR client sends the optional `FHIR_AUTH_TOKEN` only to the configured HTTPS base. It disables redirects and ignores environment proxy variables (`HTTP_PROXY`, `HTTPS_PROXY`), so an inherited proxy setting cannot receive the bearer token. Egress control belongs to the network layer, not to an application proxy.
+
 ## Reporting a vulnerability
 
 Please **do not** open a public GitHub issue for security-related findings.

@@ -6,21 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 While the project is pre-1.0, breaking changes may occur in any minor release. See the [Versioning](README.md#versioning) section of the README for the policy.
 
-## [Unreleased]
+## [0.4.0] - Unreleased
+
+### Added
+
+- Transport-independent MCP server factory (`src/mcp.ts`) with a request-local caller identity provider, and a shared Kubernetes gateway (`deploy/kubernetes/fhir-gateway.mjs`) that serves the three tools over SPIRE mTLS with resource-bound OAuth and verified SPIFFE caller identity. The gateway uses an offline synthetic fixture and depends on the sibling `mcp-svid-auth` lab; it is not standalone.
+- Kubernetes probe (`deploy/kubernetes/probe_fhir.py`) that requires explicit certificate-denial alerts.
+- Audited stdio transport (`src/stdio.ts`): schema rejections and unknown-tool calls are audited once before SDK dispatch with fixed labels.
+- Bounded FHIR response schemas (`src/fhir/schemas.ts`) and a shared `PatientIdSchema` used by the tools and the client.
+- Gated Desktop bundle packer (`pnpm package:mcpb [output]`): stages only compiler-reported runtime files and locked production dependencies, packs with MCPB 2.1.2, runs the ZIP payload gate (`scripts/check-mcpb.py`, cases in `pnpm check:mcpb`) and never overwrites an existing bundle.
+- Installed-package demo over real stdio and verified local HTTPS (`scripts/demo-package.mjs`).
+- Zensical documentation site with a GitHub Pages workflow, a demonstration guide, a visual overview, and light and dark palettes.
+- Development plan, publication-readiness gates and dated local evidence, including native Claude Desktop installation verified on 2026-10-13.
+- `.nvmrc`, `.editorconfig`, `CONTRIBUTING.md`, `CODEOWNERS`, pull request and issue templates; package metadata (author, repository, homepage, bugs, keywords).
 
 ### Changed
 
+- **BREAKING:** Audit records moved from stdout to stderr. Stdout carries MCP JSON-RPC only.
+- **BREAKING:** Tool responses are projected to allowlisted fields. Names, narrative, display text, notes, identifiers and extensions are dropped; inactive medication requests are filtered.
+- **BREAKING:** `FHIR_BASE_URL` is required when `NODE_ENV` is omitted, in production, and whenever `FHIR_AUTH_TOKEN` is set. It must be HTTPS without credentials, query or fragment.
+- **BREAKING:** `AUDIT_HMAC_KEY` must be exactly 64 hex characters; production refuses a key of one repeated character, such as the `.env.example` demo key.
+- **BREAKING:** `patient_id` is limited to 64 characters and rejects `.` and `..` in every tool, matching the client.
+- `AUDIT_LOG_FILE` is honoured in every mode, including production. Stderr remains the default and the fallback; production never requires a file.
+- Search follows same-base continuation links only, up to five pages, 200 resources and 1 MiB per page; redirects are disabled.
+- Release workflow split into a read-only build job and a draft publish job. The build verifies the tag is on `main`, matches `package.json` and `manifest.json`, and packs with the gated packer.
+- Server metadata reports the package version. The manual Desktop config uses the compiled entry point.
+- MCP SDK floor raised to 1.32.1. `uuid` replaced with `node:crypto` `randomUUID`.
 - Node.js 26 everywhere: Docker base image, CI and release workflows, `engines`, and the `.mcpb` manifest.
-- `actions/checkout` and `actions/setup-node` v7.
-- Dependencies updated within their major versions: `@modelcontextprotocol/sdk`, `axios`, `uuid`, `@biomejs/biome`, `@types/node` 26, `tsx`, `vitest`.
+- Dependencies updated within their major versions: `@modelcontextprotocol/sdk`, `axios`, `@biomejs/biome`, `@types/node` 26, `tsx`, `vitest`.
 
 ### Fixed
 
+- Fixed tool errors no longer return upstream paths or exception text.
 - Docker build: Node 25+ images no longer bundle Corepack, so `corepack enable` failed. The build installs Corepack 0.36.0 first.
-- CI and release workflows: `corepack enable` replaced with `pnpm/action-setup@v6`, which reads the pinned `packageManager`.
+- CI and release workflows: `corepack enable` replaced with `pnpm/action-setup`, which reads the pinned `packageManager`.
 
 ### Security
 
+- The FHIR client ignores environment proxies (`proxy: false`), so the backend bearer token reaches only the configured origin.
+- Every workflow pins actions to full commit SHAs, checks out without persisted credentials, sets job timeouts and scopes write permissions to the job that needs them. Gitleaks 8.30.1 is verified against its SHA-256 before use.
+- `source-map-js` overridden to `>=1.2.2` for GHSA-68fv-2mgg-jv7q (development dependency via vitest).
 - Lockfile refresh clears all 65 open Dependabot alerts (`axios`, `hono`, `fast-uri`, `vite`, `qs`, `form-data` and others). `pnpm audit` is clean.
 
 ## [0.3.0] - 2026-04-26
@@ -92,7 +117,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
-[Unreleased]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.3.0...HEAD
 [0.3.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.3.0
 [0.1.2]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.2
 [0.1.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.1

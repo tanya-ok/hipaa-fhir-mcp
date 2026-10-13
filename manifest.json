@@ -2,7 +2,7 @@
   "manifest_version": "0.1",
   "name": "hipaa-fhir-mcp",
   "display_name": "HIPAA FHIR MCP",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "HIPAA-aligned MCP server exposing three FHIR R4 tools with HMAC-keyed audit logging.",
   "long_description": "Exposes get_patient, search_observations, and get_medication_list to Claude. Implements the §164.312(b) audit invariant: every tool call emits one structured JSON record where the patient id is HMAC-SHA-256 hashed with a server-side secret before it is written. Plaintext patient ids are never logged. Defaults to the public synthetic SMART sandbox at https://r4.smarthealthit.org. Stubs for SMART OAuth, SPIFFE workload identity, and KMS envelope encryption document the production path without faking compliance.",
   "author": {
@@ -56,13 +56,13 @@
     "caller_identity": {
       "type": "string",
       "title": "Caller Identity",
-      "description": "Tagged into every audit record. In production this is a SPIFFE SVID; locally any short identifier works.",
+      "description": "Tagged into every audit record. This is an operator-configured label, not authenticated SPIFFE identity.",
       "default": "claude-desktop-local",
       "required": false
     },
     "audit_hmac_key": {
       "type": "string",
-      "title": "Audit HMAC key (32+ hex chars)",
+      "title": "Audit HMAC key (64 hex chars)",
       "description": "Server-side secret for HMAC-SHA-256 of patient ids in audit records. Generate with: openssl rand -hex 32. In production source from a secrets manager. Stored encrypted via your OS keychain.",
       "sensitive": true,
       "required": true
@@ -70,7 +70,7 @@
     "audit_log_file": {
       "type": "string",
       "title": "Audit log file (absolute path)",
-      "description": "Where structured audit records are appended. Use an absolute path. If empty, audit records go to stdout.",
+      "description": "Optional file sink for audit records. When empty, or if the file cannot be written, audit records go to stderr.",
       "default": "",
       "required": false
     }

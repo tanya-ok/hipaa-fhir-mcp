@@ -1,5 +1,36 @@
 # Demo: hipaa-fhir-mcp end-to-end
 
+## Local package demonstration
+
+This repeatable path uses synthetic fixtures behind a real local HTTPS server,
+with certificate verification enabled, and calls the compiled server over stdio.
+It needs Node 26+, pnpm and OpenSSL. It does not contact a clinical system or an
+AI provider. Temporary certificates and the random audit key are deleted on exit.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm build
+node scripts/demo-package.mjs
+```
+
+To test the distributable separately, pack it into a temporary directory,
+install the resulting tarball in another empty directory, and pass the installed
+`dist/server.js` path to the same script:
+
+```sh
+node scripts/demo-package.mjs /absolute/path/to/installed/hipaa-fhir-mcp/dist/server.js
+```
+
+The script checks all three tools, a missing resource, a wrong resource type,
+invalid arguments, an unknown tool, and a successful call after the failures.
+It verifies one hash-only audit record per call, protocol-only stdout, no
+backend request for rejected inputs, and child/server cleanup. A passing result
+prints eight calls and eight audit records. This was exercised on 2026-10-07
+with an independently installed 0.3.0 tarball on Node 26.10.0. The backend data
+is synthetic; the HTTPS connection, MCP framing and child process are real.
+
+## Interactive sandbox and Desktop walkthrough
+
 A reproducible walkthrough that takes the prototype from a clean clone to
 a working Claude Desktop session and shows the audit trail growing in real
 time.
@@ -41,7 +72,7 @@ From the repo root:
 cp .env.example .env
 ```
 
-Open `.env` and set these values. The shipped `AUDIT_HMAC_KEY` is a demo zero-key that lets the prototype run; replace it with the output of `openssl rand -hex 32` for anything beyond a sandbox-only walkthrough.
+Open `.env` and set these values. The shipped `AUDIT_HMAC_KEY` is a demo zero-key that lets the prototype run; replace it with the output of `openssl rand -hex 32` for anything beyond a sandbox-only walkthrough. Production mode refuses this key.
 
 ```
 AUDIT_LOG_FILE=./audit-demo.log
@@ -49,9 +80,9 @@ CALLER_IDENTITY=demo-inspector
 AUDIT_HMAC_KEY=0000000000000000000000000000000000000000000000000000000000000000
 ```
 
-`NODE_ENV` defaults to `development`, which is what the file sink in
-`AuditLogger` requires. In production the logger writes to stdout for
-CloudWatch ingestion instead.
+`AuditLogger` appends to `AUDIT_LOG_FILE` when it is set, in any mode. Without
+it, or if the file cannot be written, the logger writes to stderr, preserving
+stdout for the MCP protocol. Configure your runtime log collector to ingest stderr.
 
 ## Step 2: pull a fresh patient id
 
@@ -69,7 +100,7 @@ Copy the printed id. The rest of the walkthrough refers to it as
 ## Step 3 (T1): start the MCP Inspector
 
 ```fish
-pnpm dlx @modelcontextprotocol/inspector pnpm exec tsx src/server.ts
+pnpm dlx @modelcontextprotocol/inspector node --env-file=.env --import tsx src/server.ts
 ```
 
 Inspector prints a `localhost` URL on startup. Open it in a browser. The
@@ -112,7 +143,7 @@ Still in Inspector, run:
 
 | Tool | Inputs |
 |---|---|
-| `search_observations` | `patient_id` = `<PATIENT_ID>`, `code` = `http://loinc.org\|8867-4` (heart rate) |
+| `search_observations` | `patient_id` = `<PATIENT_ID>`, `code` = <code>http://loinc.org&#124;8867-4</code> (heart rate) |
 | `get_medication_list` | `patient_id` = `<PATIENT_ID>` |
 
 T2 grows by one line per call. Each carries the same `patient_id_hmac`
@@ -135,16 +166,15 @@ Add (or merge into existing `mcpServers`):
 {
   "mcpServers": {
     "hipaa-fhir-mcp": {
-      "command": "/absolute/path/to/pnpm",
+      "command": "/absolute/path/to/node",
       "args": [
-        "exec",
-        "tsx",
-        "/absolute/path/to/hipaa-fhir-mcp/src/server.ts"
+        "/absolute/path/to/hipaa-fhir-mcp/dist/server.js"
       ],
       "env": {
         "FHIR_BASE_URL": "https://r4.smarthealthit.org",
         "CALLER_IDENTITY": "demo-desktop",
         "NODE_ENV": "development",
+        "AUDIT_HMAC_KEY": "<GENERATE_A_LOCAL_KEY_WITH_OPENSSL_RAND_HEX_32>",
         "AUDIT_LOG_FILE": "/absolute/path/to/hipaa-fhir-mcp/audit-demo.log"
       }
     }
@@ -152,11 +182,15 @@ Add (or merge into existing `mcpServers`):
 }
 ```
 
+Replace the HMAC key placeholder with a locally generated key before starting
+Desktop. Do not publish the configured key or the resulting configuration.
+
 All three paths must be absolute. Desktop launches the child process
 from its own working directory, not from the repo, so a relative
 `./audit-demo.log` would land somewhere unexpected and T2 would never
 see new lines. macOS GUI apps also do not always inherit your shell
-`PATH`, so a bare `pnpm` may not resolve. Run `which pnpm` and paste
+`PATH`, so a bare `node` may not resolve. Build with `pnpm build`, then run
+`which node` and paste
 the result into `command`.
 
 `CALLER_IDENTITY` is set to `demo-desktop` here, distinct from the
@@ -174,7 +208,7 @@ appends one or more audit lines with `caller_identity: "demo-desktop"`.
 | Prompt to paste into Desktop | Tool the model should call |
 |---|---|
 | Fetch the FHIR Patient with id `<PATIENT_ID>`. | `get_patient` |
-| Search heart rate observations (LOINC code `http://loinc.org\|8867-4`) for patient `<PATIENT_ID>`. | `search_observations` |
+| Search heart rate observations (LOINC code <code>http://loinc.org&#124;8867-4</code>) for patient `<PATIENT_ID>`. | `search_observations` |
 | List active medications for patient `<PATIENT_ID>`. | `get_medication_list` |
 
 Replace `<PATIENT_ID>` with the value from Step 2. After the third
@@ -222,15 +256,16 @@ rm audit-demo.log
 The Inspector and Desktop paths exercised here are the development
 surface. A production deployment replaces:
 
-- `pnpm exec tsx src/server.ts` with the compiled `node dist/server.js`
+- `node --env-file=.env --import tsx src/server.ts` with the compiled `node dist/server.js`
   running in a Fargate task or EKS pod
 - the SMART sandbox with an AWS HealthLake datastore reached over a VPC
   interface endpoint
 - `CALLER_IDENTITY=demo-desktop` with a SPIFFE SVID read from the
   Workload API socket
-- the local audit log file with stdout streamed to CloudWatch Logs
+- the local audit log file with stderr collected by the container runtime and
+  forwarded to CloudWatch Logs
 
 The control-by-control mapping is in
 [`hipaa-compliance-mapping.md`](hipaa-compliance-mapping.md). The
 production-path sketch is in the README under
-[Production deployment notes](../README.md#production-deployment-notes).
+[Production deployment notes](https://github.com/tanya-ok/hipaa-fhir-mcp/blob/main/README.md#production-deployment-notes).

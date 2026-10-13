@@ -1,0 +1,88 @@
+/* Compact project overviews. Full reference pages retain the site theme. */
+.md-typeset .project-kicker {
+  color: var(--md-typeset-a-color);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin: 0 0 0.8rem;
+  text-transform: uppercase;
+}
+.md-content:has(.project-kicker) .md-typeset h1 {
+  color: var(--md-default-fg-color);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  margin-bottom: 0.75rem;
+  max-width: 20ch;
+}
+.md-typeset .project-lead {
+  color: var(--md-default-fg-color--light);
+  font-size: 1rem;
+  line-height: 1.65;
+  max-width: 55ch;
+  margin-bottom: 1.6rem;
+}
+.md-content:has(.project-kicker) .md-typeset h2 {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 1.5rem 0 0.75rem;
+}
+.md-content:has(.project-kicker) .md-typeset h2::before {
+  display: none;
+}
+.md-content:has(.project-kicker) .mermaid {
+  background: var(--md-code-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 1rem;
+  padding: 1rem 0.5rem;
+  margin: 1rem 0;
+  text-align: center;
+  --md-mermaid-label-fg-color: #183452;
+  --md-mermaid-label-bg-color: #e8effa;
+  --md-mermaid-edge-color: #60738a;
+}
+[data-md-color-scheme="slate"] .md-content:has(.project-kicker) .mermaid {
+  --md-mermaid-label-fg-color: var(--md-code-fg-color);
+  --md-mermaid-label-bg-color: var(--md-default-bg-color);
+  --md-mermaid-edge-color: var(--md-default-fg-color--light);
+}
+.md-content:has(.project-kicker) p:has(> .overview-link) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: 1.2rem 0 1.6rem;
+}
+.md-typeset a.overview-link {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.md-typeset a.overview-link:hover,
+.md-typeset a.overview-link:focus-visible {
+  border-color: var(--md-typeset-a-color);
+  background: var(--md-code-bg-color);
+}
+.md-content:has(.project-kicker) .md-typeset .admonition {
+  box-shadow: none;
+  border-radius: 0.6rem;
+}
+@media (max-width: 600px) {
+  .md-typeset .project-lead {
+    font-size: 0.85rem;
+  }
+  .md-content:has(.project-kicker) .mermaid {
+    padding: 0.75rem 0.15rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset a.overview-link {
+    transition: none;
+  }
+}
