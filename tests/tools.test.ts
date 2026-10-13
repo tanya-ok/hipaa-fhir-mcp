@@ -10,9 +10,15 @@ import type {
   Observation,
   Patient,
 } from "../src/fhir/types.js";
-import { getMedicationList } from "../src/tools/get-medication-list.js";
-import { getPatient } from "../src/tools/get-patient.js";
-import { searchObservations } from "../src/tools/search-observations.js";
+import {
+  GetMedicationListInput,
+  getMedicationList,
+} from "../src/tools/get-medication-list.js";
+import { GetPatientInput, getPatient } from "../src/tools/get-patient.js";
+import {
+  SearchObservationsInput,
+  searchObservations,
+} from "../src/tools/search-observations.js";
 import type { ToolDeps } from "../src/tools/types.js";
 
 const TEST_HMAC_KEY = "0".repeat(64);
@@ -104,7 +110,60 @@ describe("audit logger", () => {
     expect(auditA.hmac("same-id")).not.toBe(auditB.hmac("same-id"));
   });
 
-  it("falls back to stdout when the file sink fails", async () => {
+  it("honours an explicit file sink in production", async () => {
+    const file = path.join(tmp, "audit.log");
+    const audit = new AuditLogger(
+      makeConfig({ NODE_ENV: "production", AUDIT_LOG_FILE: file }),
+    );
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    try {
+      await audit.record({
+        tool: "get_patient",
+        patient_id: "smart-12345",
+        caller_identity: "t",
+        request_id: "r",
+        status: "success",
+      });
+      const line = (await readFile(file, "utf8")).trim();
+      expect(JSON.parse(line).patient_id_hmac).toBe(audit.hmac("smart-12345"));
+      expect(line).not.toContain("smart-12345");
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(stderrSpy).not.toHaveBeenCalled();
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+    }
+  });
+
+  it("falls back to stderr in production when the file sink fails", async () => {
+    const audit = new AuditLogger(
+      makeConfig({
+        NODE_ENV: "production",
+        AUDIT_LOG_FILE: path.join(tmp, "does-not-exist", "audit.log"),
+      }),
+    );
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    try {
+      await audit.record({
+        tool: "get_patient",
+        patient_id: "smart-12345",
+        caller_identity: "t",
+        request_id: "r",
+        status: "success",
+      });
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(stderrSpy.mock.calls.flat().join(" ")).toContain(
+        audit.hmac("smart-12345"),
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+    }
+  });
+
+  it("falls back to stderr without exposing the file path", async () => {
     const audit = new AuditLogger(
       makeConfig({
         NODE_ENV: "development",
@@ -122,7 +181,8 @@ describe("audit logger", () => {
       status: "success",
     });
 
-    expect(stdoutSpy).toHaveBeenCalledOnce();
+    expect(stdoutSpy).not.toHaveBeenCalled();
+    expect(stderrSpy.mock.calls.flat().join(" ")).not.toContain(tmp);
     expect(stderrSpy).toHaveBeenCalled();
     stdoutSpy.mockRestore();
     stderrSpy.mockRestore();
@@ -280,5 +340,29 @@ describe("tools", () => {
       status: "error",
       error_code: "internal_error",
     });
+  });
+});
+
+describe("tool input bounds", () => {
+  const schemas = [
+    ["get_patient", GetPatientInput, {}],
+    ["get_medication_list", GetMedicationListInput, {}],
+    ["search_observations", SearchObservationsInput, { code: "8867-4" }],
+  ] as const;
+
+  it.each(schemas)("%s accepts a 64-character id", (_name, schema, extra) => {
+    expect(
+      schema.safeParse({ ...extra, patient_id: "a".repeat(64) }).success,
+    ).toBe(true);
+  });
+
+  it.each(
+    schemas.flatMap(([name, schema, extra]) =>
+      ["a".repeat(65), ".", "..", "", "a/b"].map(
+        (patient_id) => [name, patient_id, schema, extra] as const,
+      ),
+    ),
+  )("%s rejects patient_id %j", (_name, patient_id, schema, extra) => {
+    expect(schema.safeParse({ ...extra, patient_id }).success).toBe(false);
   });
 });

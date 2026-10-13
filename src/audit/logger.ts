@@ -47,21 +47,18 @@ export class AuditLogger {
     };
     const line = `${JSON.stringify(record)}\n`;
 
-    const useFile =
-      this.config.NODE_ENV !== "production" && this.config.AUDIT_LOG_FILE;
+    const file = this.config.AUDIT_LOG_FILE;
 
-    if (!useFile) {
-      process.stdout.write(line);
+    if (!file) {
+      process.stderr.write(line);
       return;
     }
 
     try {
-      await appendFile(this.config.AUDIT_LOG_FILE as string, line, "utf8");
-    } catch (err) {
-      process.stdout.write(line);
-      process.stderr.write(
-        `audit: file sink failed, fell back to stdout: ${(err as Error).message}\n`,
-      );
+      await appendFile(file, line, "utf8");
+    } catch {
+      process.stderr.write(line);
+      process.stderr.write("audit: file sink failed, using stderr\n");
     }
   }
 }

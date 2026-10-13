@@ -2,6 +2,12 @@
 
 Guidance for AI coding agents (Claude Code, Cursor, Copilot, Aider, etc.) working on this repository. Humans should also read this; it is the shortest path to a coherent change.
 
+## Local maintainer instructions
+
+- At the start of every task, check whether `AGENTS.local.md` exists in the repository root.
+- If it exists, read it and follow it together with this file. It is git-ignored: never commit it and never quote it in tracked files, commit messages, issues or pull requests.
+- It may add restrictions. It must not relax or contradict this file. If the two conflict, follow this file and report the conflict to the maintainer.
+
 ## What this repo is
 
 `hipaa-fhir-mcp` is a portfolio / open-source prototype of a HIPAA-oriented MCP server that exposes FHIR R4 tools to AI agents over stdio.
@@ -42,10 +48,13 @@ pnpm dlx @modelcontextprotocol/inspector pnpm exec tsx src/server.ts
 
 | Path | Purpose |
 |---|---|
-| `src/server.ts` | MCP server entry, stdio transport, tool registration |
+| `src/server.ts` | MCP server entry point (stdio) |
+| `src/mcp.ts` | Transport-independent MCP server factory and tool registration |
+| `src/stdio.ts` | Stdio transport that audits pre-handler rejections |
 | `src/config.ts` | zod-validated env, fails fast on missing values |
-| `src/audit/logger.ts` | Structured audit log, SHA-256 patient id hashing |
+| `src/audit/logger.ts` | Structured audit log, keyed HMAC-SHA-256 patient id hashing |
 | `src/fhir/client.ts` | HTTP FHIR client (axios), swappable for HealthLake |
+| `src/fhir/schemas.ts` | Bounded response schemas and the shared patient id schema |
 | `src/fhir/types.ts` | Minimal FHIR R4 types used by the tools |
 | `src/tools/*.ts` | The three exposed MCP tools and their zod input schemas |
 | `src/security/oauth.ts` | SMART-on-FHIR OAuth 2.1 + PKCE stub |
@@ -58,7 +67,7 @@ pnpm dlx @modelcontextprotocol/inspector pnpm exec tsx src/server.ts
 
 These rules are non-negotiable. Do not relax them, even temporarily, even in tests.
 
-1. **No PHI in logs.** `patient_id` is only ever written as a SHA-256 hash. No name, DOB, address, or free-text clinical content goes to stdout, the audit log, or any other sink. If you add a log line that includes a patient identifier or response body, you are introducing a HIPAA §164.312(b) violation.
+1. **No PHI in logs.** `patient_id` is only ever written as a keyed HMAC-SHA-256 digest (`AUDIT_HMAC_KEY`). No name, DOB, address, or free-text clinical content goes to stdout, the audit log, or any other sink. If you add a log line that includes a patient identifier or response body, you are introducing a HIPAA §164.312(b) violation.
 2. **Never disable TLS verification.** No `NODE_TLS_REJECT_UNAUTHORIZED=0`, no axios `httpsAgent: { rejectUnauthorized: false }`. Fix the certificate, not the check.
 3. **Every tool invocation emits exactly one audit record**, including failures. The audit logger is the boundary; do not bypass it for "small" tools.
 4. **Synthetic data only.** The default `FHIR_BASE_URL` is the public SMART sandbox at `https://r4.smarthealthit.org`. Do not commit fixtures, tests, or examples that point at real PHI.

@@ -8,3 +8,18 @@ audit-*.log
 coverage/
 .claude/settings.local.json
 *.mcpb
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+/.venv-docs/
+/site/
+/.cache/
+
+# Local archive checker cache
+__pycache__/
+
+# Local review notes
+docs/local-workspace-review.md
+AGENTS.local.md

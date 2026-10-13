@@ -1,8 +1,24 @@
 {
   "name": "hipaa-fhir-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "HIPAA-oriented MCP server exposing FHIR R4 tools to AI agents",
   "license": "MIT",
+  "author": "Tanya Babitskaya",
+  "homepage": "https://github.com/tanya-ok/hipaa-fhir-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tanya-ok/hipaa-fhir-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tanya-ok/hipaa-fhir-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "fhir",
+    "hipaa",
+    "healthcare",
+    "audit"
+  ],
   "type": "module",
   "main": "dist/server.js",
   "bin": {
@@ -16,7 +32,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "tsx src/server.ts",
+    "dev": "node --env-file-if-exists=.env --import tsx src/server.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "audit": "pnpm audit --audit-level moderate",
@@ -25,13 +41,13 @@
     "format": "biome format --write .",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "package:mcpb": "pnpm build && pnpm dlx @anthropic-ai/mcpb pack . hipaa-fhir-mcp.mcpb"
+    "package:mcpb": "node scripts/package-mcpb.mjs",
+    "check:mcpb": "python3 scripts/test-mcpb.py"
   },
   "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.1",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "axios": "^1.20.0",
-    "uuid": "^14.0.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -43,5 +59,10 @@
   },
   "engines": {
     "node": ">=26.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "source-map-js": ">=1.2.2"
+    }
   }
 }

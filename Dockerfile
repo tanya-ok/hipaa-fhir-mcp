@@ -32,8 +32,8 @@ RUN pnpm prune --prod
 # ---- runtime stage ---------------------------------------------------------
 FROM node:26-alpine AS runtime
 
-# Production defaults. The audit logger (src/audit/logger.ts) writes to stdout
-# when NODE_ENV=production so a CloudWatch agent or sidecar can pick it up.
+# Production defaults. The audit logger (src/audit/logger.ts) writes to stderr
+# unless AUDIT_LOG_FILE is set, so a log collector or sidecar can pick it up.
 ENV NODE_ENV=production \
     NODE_OPTIONS=--enable-source-maps
 
