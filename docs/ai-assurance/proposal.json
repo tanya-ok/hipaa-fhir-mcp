@@ -1,0 +1,83 @@
+{
+  "proposal_schema": 1,
+  "status": "pending-maintainer-review",
+  "installation_authorized": false,
+  "basis_commit": "13debbbdf02f5329da1697d0a0b09c93dffe76f3",
+  "source": {
+    "repository": "ai-assurance",
+    "commit": "353d374a00b43479870a6dee300dd200529cc60c",
+    "version": "0.2.1"
+  },
+  "profile_candidate": {
+    "schema": 2,
+    "project_id": "hipaa-fhir-mcp",
+    "scope": "Synthetic FHIR input/response minimization and stdio audit tests; no real PHI, clinical backend or HIPAA certification.",
+    "ci": {
+      "repository": "tanya-ok/hipaa-fhir-mcp",
+      "workflow": ".github/workflows/ci.yml"
+    },
+    "controls": {
+      "access-boundary": {
+        "applicable": true,
+        "claim": "Only registered read tools with validated inputs are accepted; stdio identity is a documented placeholder.",
+        "ci_checks": ["verify"]
+      },
+      "data-exposure": {
+        "applicable": true,
+        "claim": "FHIR responses are minimized and patient identifiers are HMAC-hashed in audit records.",
+        "ci_checks": ["verify"]
+      },
+      "untrusted-instructions": {
+        "applicable": true,
+        "claim": "Untrusted FHIR response shapes are rejected rather than becoming tool authority.",
+        "ci_checks": ["verify"]
+      },
+      "consequential-actions": {
+        "applicable": true,
+        "claim": "Invalid tool requests are refused and audited before handler execution.",
+        "ci_checks": ["verify"]
+      },
+      "evidence-lineage": {
+        "applicable": true,
+        "claim": "Success and failure invocations have a bounded audit record with request context.",
+        "ci_checks": ["verify"]
+      },
+      "bounded-claims": {
+        "applicable": true,
+        "claim": "The source keeps synthetic-only and production-stub limitations explicit.",
+        "ci_checks": ["verify"]
+      }
+    }
+  },
+  "evidence_plan": {
+    "access-boundary": {
+      "paths": ["tests/mcp.test.ts", "tests/tools.test.ts"],
+      "limitations": "Source inspection only; a passing job is not proof of every claim."
+    },
+    "data-exposure": {
+      "paths": [
+        "tests/client.test.ts",
+        "tests/tools.test.ts",
+        "scripts/check-phi.mjs"
+      ],
+      "limitations": "Source inspection only; a passing job is not proof of every claim."
+    },
+    "untrusted-instructions": {
+      "paths": ["tests/client.test.ts", "tests/mcp.test.ts"],
+      "limitations": "Source inspection only; a passing job is not proof of every claim."
+    },
+    "consequential-actions": {
+      "paths": ["tests/stdio.test.ts"],
+      "limitations": "Source inspection only; a passing job is not proof of every claim."
+    },
+    "evidence-lineage": {
+      "paths": ["tests/tools.test.ts", "tests/stdio.test.ts"],
+      "limitations": "Source inspection only; a passing job is not proof of every claim."
+    },
+    "bounded-claims": {
+      "paths": ["README.md", "docs/hipaa-compliance-mapping.md"],
+      "limitations": "Source inspection only; a passing job is not proof of every claim."
+    }
+  },
+  "remaining_gaps": "The verify job is a coarse CI gate. Document review is not automated proof. SMART OAuth/KMS stubs, real clinical authorization and semantic injection resistance remain outside this evidence."
+}
