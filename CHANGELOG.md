@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 While the project is pre-1.0, breaking changes may occur in any minor release. See the [Versioning](README.md#versioning) section of the README for the policy.
 
+## [Unreleased]
+
+### Security
+
+- Moved zod from 3.25.76 to 4.6.7 to address GHSA-mrhx-c7xc-m3w5, which has no fixed 3.x release. Configuration validation uses the zod 4 URL, custom issue and error flattening APIs.
+
 ## [0.4.0] - 2026-10-13
 
 ### Added

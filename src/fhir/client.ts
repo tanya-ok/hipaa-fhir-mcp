@@ -158,7 +158,7 @@ export class HttpFhirClient implements FhirClient {
       throw new FhirError("Invalid FHIR identifier");
   }
 
-  private parse<S extends z.ZodTypeAny>(schema: S, data: unknown): z.output<S> {
+  private parse<S extends z.ZodType>(schema: S, data: unknown): z.output<S> {
     const result = schema.safeParse(data);
     if (!result.success) throw new FhirError("Invalid FHIR response");
     return result.data;

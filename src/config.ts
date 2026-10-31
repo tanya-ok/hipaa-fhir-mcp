@@ -3,7 +3,6 @@ import { z } from "zod";
 export const ConfigSchema = z
   .object({
     FHIR_BASE_URL: z
-      .string()
       .url()
       .refine((value) => {
         const url = URL.parse(value);
@@ -36,7 +35,7 @@ export const ConfigSchema = z
       /^(.)\1*$/i.test(config.AUDIT_HMAC_KEY)
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["AUDIT_HMAC_KEY"],
         message:
           "AUDIT_HMAC_KEY must not repeat one character in production. Generate one with: openssl rand -hex 32",
@@ -49,7 +48,7 @@ export const ConfigSchema = z
         config.FHIR_AUTH_TOKEN !== undefined)
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["FHIR_BASE_URL"],
         message:
           "FHIR_BASE_URL is required unless development/test is explicit and no backend token is configured",
@@ -67,7 +66,7 @@ export type Config = z.infer<typeof ConfigSchema>;
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const result = ConfigSchema.safeParse(env);
   if (!result.success) {
-    const issues = result.error.flatten().fieldErrors;
+    const issues = z.flattenError(result.error).fieldErrors;
     process.stderr.write(
       `config: invalid environment\n${JSON.stringify(issues, null, 2)}\n`,
     );
