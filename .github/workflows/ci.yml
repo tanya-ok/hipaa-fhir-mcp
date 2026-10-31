@@ -46,7 +46,13 @@ jobs:
         run: pnpm build
 
       - name: Audit dependencies
-        run: pnpm audit --audit-level moderate
+        run: |
+          umask 077
+          if ! pnpm audit --audit-level moderate --json \
+            > "$RUNNER_TEMP/dependency-audit.json" 2> "$RUNNER_TEMP/dependency-audit.stderr"; then
+            printf '%s\n' '::error::Dependency audit failed; review the lockfile privately.'
+            exit 1
+          fi
 
       - name: PHI sweep
         run: pnpm check:phi
