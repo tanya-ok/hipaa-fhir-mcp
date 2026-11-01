@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { AuditInput } from "../audit/logger.js";
-import { FhirError } from "../fhir/client.js";
 import { PatientIdSchema } from "../fhir/schemas.js";
 import type { Observation } from "../fhir/types.js";
+import { errorCode, requirePatientAccess } from "./access.js";
 import type { ToolDeps } from "./types.js";
 
 export const SearchObservationsInput = z.object({
@@ -34,6 +34,7 @@ export async function searchObservations(
   };
 
   try {
+    requirePatientAccess(deps, "search_observations", input.patient_id);
     const observations = await deps.fhir.searchObservations(
       input.patient_id,
       input.code,
@@ -44,10 +45,7 @@ export async function searchObservations(
     await deps.audit.record({
       ...base,
       status: "error",
-      error_code:
-        err instanceof FhirError && err.statusCode !== undefined
-          ? `fhir_${err.statusCode}`
-          : "internal_error",
+      error_code: errorCode(err),
     });
     throw err;
   }

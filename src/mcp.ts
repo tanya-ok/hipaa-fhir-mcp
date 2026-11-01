@@ -10,6 +10,8 @@ import {
   SearchObservationsInput,
   searchObservations,
 } from "./tools/search-observations.js";
+import type { RequestContext } from "./security/context.js";
+import { PatientAccessDenied } from "./tools/access.js";
 import type { ToolDeps } from "./tools/types.js";
 
 const { version } = z
@@ -28,14 +30,15 @@ function toTextResult(value: unknown): {
   };
 }
 
-function toErrorResult(): {
+function toErrorResult(err?: unknown): {
   content: { type: "text"; text: string }[];
   isError: true;
 } {
-  return {
-    content: [{ type: "text", text: "FHIR request failed" }],
-    isError: true,
-  };
+  const text =
+    err instanceof PatientAccessDenied
+      ? "Patient access not authorized"
+      : "FHIR request failed";
+  return { content: [{ type: "text", text }], isError: true };
 }
 
 export const toolInputSchemas = {
@@ -44,15 +47,26 @@ export const toolInputSchemas = {
   get_medication_list: GetMedicationListInput,
 };
 
-/** The caller provider is trusted transport context, never a client header. */
+/**
+ * The context provider is trusted transport state, never a client header or
+ * tool argument. CALLER_IDENTITY stays an audit label when no principal is
+ * verified.
+ */
 export function createFhirMcpServer(
-  deps: ToolDeps,
-  callerIdentity: () => string = () => deps.config.CALLER_IDENTITY,
+  deps: Omit<ToolDeps, "context">,
+  context: () => RequestContext,
 ): McpServer {
-  const requestDeps = (): ToolDeps => ({
-    ...deps,
-    config: { ...deps.config, CALLER_IDENTITY: callerIdentity() },
-  });
+  const requestDeps = (): ToolDeps => {
+    const current = context();
+    return {
+      ...deps,
+      context: current,
+      config: {
+        ...deps.config,
+        CALLER_IDENTITY: current.principal ?? deps.config.CALLER_IDENTITY,
+      },
+    };
+  };
   const server = new McpServer({
     name: "hipaa-fhir-mcp",
     version,
@@ -70,8 +84,8 @@ export function createFhirMcpServer(
       try {
         const patient = await getPatient(input, requestDeps());
         return toTextResult(patient);
-      } catch {
-        return toErrorResult();
+      } catch (err) {
+        return toErrorResult(err);
       }
     },
   );
@@ -88,8 +102,8 @@ export function createFhirMcpServer(
       try {
         const observations = await searchObservations(input, requestDeps());
         return toTextResult(observations);
-      } catch {
-        return toErrorResult();
+      } catch (err) {
+        return toErrorResult(err);
       }
     },
   );
@@ -106,8 +120,8 @@ export function createFhirMcpServer(
       try {
         const meds = await getMedicationList(input, requestDeps());
         return toTextResult(meds);
-      } catch {
-        return toErrorResult();
+      } catch (err) {
+        return toErrorResult(err);
       }
     },
   );

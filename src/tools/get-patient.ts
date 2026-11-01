@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { AuditInput } from "../audit/logger.js";
-import { FhirError } from "../fhir/client.js";
 import { PatientIdSchema } from "../fhir/schemas.js";
 import type { Patient } from "../fhir/types.js";
+import { errorCode, requirePatientAccess } from "./access.js";
 import type { ToolDeps } from "./types.js";
 
 export const GetPatientInput = z.object({
@@ -24,6 +24,7 @@ export async function getPatient(
   };
 
   try {
+    requirePatientAccess(deps, "get_patient", input.patient_id);
     const patient = await deps.fhir.getPatient(input.patient_id);
     await deps.audit.record({ ...base, status: "success" });
     return patient;
@@ -35,11 +36,4 @@ export async function getPatient(
     });
     throw err;
   }
-}
-
-function errorCode(err: unknown): string {
-  if (err instanceof FhirError && err.statusCode !== undefined) {
-    return `fhir_${err.statusCode}`;
-  }
-  return "internal_error";
 }
