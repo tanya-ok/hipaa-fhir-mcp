@@ -59,6 +59,17 @@ Defer KMS envelope encryption until persistent payload storage has a defined nee
 
 Completion requires typecheck, tests, build, Biome, PHI sweep, and an actual stdio session. Real PHI, production deployment, BAA review, and remote client compatibility were not validated in this review.
 
+## Roadmap after the 2026-11-01 review
+
+Ranked by security value per effort after a cross-model review. Every denial test needs a matching allowed case.
+
+| Order | Work | Acceptance criterion |
+|---|---|---|
+| 1 | Per-patient authorization before FHIR dispatch | The allowed patient comes from a verified caller context (the optional human identity provider demo or a validated access token), never from a tool argument alone. All three tools refuse a different patient before any FHIR request; searches, `subject` and `patient` parameters and returned resources outside the granted patient are refused or filtered; each refusal is audited once with a fixed safe error; the same caller reading the granted patient succeeds |
+| 2 | Trusted identity boundary | Document and test which component establishes caller identity and the patient grant in each mode (stdio demo, HTTP gateway, shared lab). A missing or unverifiable context denies by default |
+| 3 | SMART Backend Services client authentication | Asymmetric client authentication per [SMART App Launch 2.2 Backend Services](https://hl7.org/fhir/smart-app-launch/STU2.2/backend-services.html) against a lab-local synthetic SMART server. A JWT-SVID assertion ([draft-ietf-oauth-spiffe-client-auth](https://datatracker.ietf.org/doc/draft-ietf-oauth-spiffe-client-auth/)) is used only where the server explicitly supports that profile |
+| 4 | Key lifecycle | HMAC key rotation and JWKS refresh behaviour are specified and tested before any production claim |
+
 ## Task tracking checkpoint
 
 The [2026-10-07 portfolio checkpoint](https://github.com/tanya-ok/mcp-svid-auth/blob/main/docs/portfolio-checkpoint-2026-10-07.md) reconciles this plan with local beads tasks. Use `bd --sandbox ready` before starting work and update task status and validation evidence as work progresses. Public task snapshots are in `.beads/issues.jsonl`; local databases stay untracked. Remote synchronization is disabled.
