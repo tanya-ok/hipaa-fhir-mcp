@@ -8,6 +8,10 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Changed
+
+- Moved vitest from 4.1.12 to 5.0.5 and Biome from 2.5.14 to 2.6.3. The test suite needed no changes. Biome 2.6 formats Markdown and YAML by default; the Markdown and YAML formatters are turned off and `pnpm-lock.yaml` is excluded, while the Markdown and YAML linters stay on.
+
 ### Security
 
 - Moved zod from 3.25.76 to 4.6.7 to address GHSA-mrhx-c7xc-m3w5, which has no fixed 3.x release. Configuration validation uses the zod 4 URL, custom issue and error flattening APIs.
