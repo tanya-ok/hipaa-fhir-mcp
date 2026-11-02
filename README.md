@@ -182,6 +182,19 @@ pnpm check:fix      # apply Biome fixes
 pnpm check:phi      # PHI shape sweep
 ```
 
+## Patient access policy
+
+Every tool checks the caller before any FHIR request and denies by default. A grant is an exact match of principal, patient and tool, loaded from `PATIENT_POLICY_FILE` (see [`patient-policy.example.json`](patient-policy.example.json)). An invalid policy file stops the server at startup. A denial returns `Patient access not authorized` and writes one audit record with `patient_not_authorized`.
+
+| Mode | Where the principal comes from | Default |
+|---|---|---|
+| Standalone stdio | `LOCAL_SYNTHETIC_PRINCIPAL`, a labelled local fixture. It is not authenticated | Every call denied |
+| Kubernetes gateway | The verified SPIFFE mTLS peer, already matched to the token subject | One synthetic grant in the gateway |
+
+`CALLER_IDENTITY` remains an audit label and never grants access. Tool arguments cannot supply an identity or a grant. This is a local policy for the prototype, not SMART authorization or clinical consent; a compromised caller can still misuse the patients it is granted.
+
+Use synthetic patient ids only. To try the sandbox, copy the example, put a sandbox patient id in `patients`, and set both variables.
+
 ## Install in Claude Desktop
 
 Two paths. The local extension bundle installs natively in Claude Desktop; this was verified on 2026-10-13. The manual config is for active development.
@@ -190,7 +203,7 @@ Two paths. The local extension bundle installs natively in Claude Desktop; this 
 
 1. Build a local bundle with `pnpm package:mcpb` (requires Python 3 for the archive gate). This prepares a file without publishing a release. An existing bundle is not overwritten.
 2. In Claude Desktop: `Settings -> Extensions -> Install Extension...` and select the file.
-3. The form prompts for four values: FHIR base URL, caller identity, audit HMAC key (required), audit log file path. The HMAC key is stored encrypted via your OS keychain. Generate one with `openssl rand -hex 32`. The other three have working defaults for the public sandbox.
+3. The form prompts for FHIR base URL, caller identity, audit HMAC key (required), audit log file path, patient policy file and local synthetic principal. Without the last two, every tool call is denied. The HMAC key is stored encrypted via your OS keychain. Generate one with `openssl rand -hex 32`. The other three have working defaults for the public sandbox.
 4. Restart Claude Desktop. The three tools appear in the tools menu under `hipaa-fhir-mcp`.
 
 Claude Desktop's built-in Node runtime is 24.x. The manifest requires Node 26 or newer, so Desktop runs the server with the system Node 26 found on its `PATH`. Install Node 26 system-wide before installing the extension.
@@ -218,7 +231,9 @@ Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop
         "CALLER_IDENTITY": "claude-desktop-local",
         "AUDIT_HMAC_KEY": "<paste-output-of-openssl-rand-hex-32>",
         "NODE_ENV": "development",
-        "AUDIT_LOG_FILE": "/absolute/path/to/hipaa-fhir-mcp/audit-claude.log"
+        "AUDIT_LOG_FILE": "/absolute/path/to/hipaa-fhir-mcp/audit-claude.log",
+        "PATIENT_POLICY_FILE": "/absolute/path/to/patient-policy.json",
+        "LOCAL_SYNTHETIC_PRINCIPAL": "local-synthetic-operator"
       }
     }
   }

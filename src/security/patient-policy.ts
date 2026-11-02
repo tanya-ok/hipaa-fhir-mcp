@@ -75,11 +75,8 @@ export function createPatientAuthorizer(
       if (context.provenance === "none" || context.principal === null)
         return false;
       const grant = grants.get(context.principal);
-      return (
-        grant !== undefined &&
-        grant.tools.has(tool) &&
-        grant.patients.has(patientId)
-      );
+      if (grant === undefined) return false;
+      return grant.tools.has(tool) && grant.patients.has(patientId);
     },
   };
   return Object.freeze(authorizer);

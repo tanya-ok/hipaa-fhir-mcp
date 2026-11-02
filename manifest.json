@@ -27,7 +27,9 @@
         "CALLER_IDENTITY": "${user_config.caller_identity}",
         "AUDIT_HMAC_KEY": "${user_config.audit_hmac_key}",
         "NODE_ENV": "production",
-        "AUDIT_LOG_FILE": "${user_config.audit_log_file}"
+        "AUDIT_LOG_FILE": "${user_config.audit_log_file}",
+        "PATIENT_POLICY_FILE": "${user_config.patient_policy_file}",
+        "LOCAL_SYNTHETIC_PRINCIPAL": "${user_config.local_synthetic_principal}"
       }
     }
   },
@@ -71,6 +73,20 @@
       "type": "string",
       "title": "Audit log file (absolute path)",
       "description": "Optional file sink for audit records. When empty, or if the file cannot be written, audit records go to stderr.",
+      "default": "",
+      "required": false
+    },
+    "patient_policy_file": {
+      "type": "string",
+      "title": "Patient policy file (absolute path)",
+      "description": "JSON policy mapping a principal to patients and tools. When empty, every tool call is denied.",
+      "default": "",
+      "required": false
+    },
+    "local_synthetic_principal": {
+      "type": "string",
+      "title": "Local synthetic principal",
+      "description": "Local fixture identity matched against the policy. It is not an authenticated caller. When empty, every tool call is denied.",
       "default": "",
       "required": false
     }

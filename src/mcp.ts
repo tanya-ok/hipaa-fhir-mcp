@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import type { RequestContext } from "./security/context.js";
+import { PatientAccessDenied } from "./tools/access.js";
 import {
   GetMedicationListInput,
   getMedicationList,
@@ -10,8 +12,6 @@ import {
   SearchObservationsInput,
   searchObservations,
 } from "./tools/search-observations.js";
-import type { RequestContext } from "./security/context.js";
-import { PatientAccessDenied } from "./tools/access.js";
 import type { ToolDeps } from "./tools/types.js";
 
 const { version } = z

@@ -1,6 +1,27 @@
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
+
+const policyDir = mkdtempSync(path.join(tmpdir(), "hipaa-stdio-policy-"));
+const policyFile = path.join(policyDir, "policy.json");
+writeFileSync(
+  policyFile,
+  JSON.stringify({
+    version: 1,
+    grants: [
+      {
+        principal: "synthetic-local",
+        patients: ["synthetic-ok", "synthetic-error", "synthetic-wrong"],
+        tools: ["get_patient"],
+      },
+    ],
+  }),
+);
+afterAll(() => rmSync(policyDir, { recursive: true, force: true }));
 
 describe("actual stdio process", () => {
   it("audits accepted, rejected and failed calls exactly once without contaminating stdout", async () => {
@@ -17,6 +38,8 @@ describe("actual stdio process", () => {
         NODE_ENV: "production",
         AUDIT_HMAC_KEY: "ab".repeat(32),
         FHIR_BASE_URL: "https://example.org/fhir",
+        PATIENT_POLICY_FILE: policyFile,
+        LOCAL_SYNTHETIC_PRINCIPAL: "synthetic-local",
       },
       stderr: "pipe",
     });
@@ -100,5 +123,80 @@ describe("actual stdio process", () => {
       "synthetic-private",
     ])
       expect(audit).not.toContain(value);
+  }, 30_000);
+
+  it("denies every tool call when no policy or principal is configured", async () => {
+    const transport = new StdioClientTransport({
+      command: process.execPath,
+      args: [
+        "--import",
+        "tsx",
+        "--import",
+        "./tests/fixtures/stdio-http.ts",
+        "src/server.ts",
+      ],
+      env: {
+        NODE_ENV: "production",
+        AUDIT_HMAC_KEY: "ab".repeat(32),
+        FHIR_BASE_URL: "https://example.org/fhir",
+        CALLER_IDENTITY: "synthetic-label-only",
+      },
+      stderr: "pipe",
+    });
+    let audit = "";
+    transport.stderr?.on("data", (chunk) => {
+      audit += chunk.toString();
+    });
+    const client = new Client({ name: "synthetic-stdio-deny", version: "1" });
+    try {
+      await client.connect(transport);
+      expect(
+        await client.callTool({
+          name: "get_patient",
+          arguments: { patient_id: "synthetic-ok" },
+        }),
+      ).toMatchObject({
+        isError: true,
+        content: [{ type: "text", text: "Patient access not authorized" }],
+      });
+    } finally {
+      await client.close();
+    }
+    const records = audit
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      status: "error",
+      error_code: "patient_not_authorized",
+      caller_identity: "synthetic-label-only",
+    });
+    expect(audit).not.toContain("synthetic-ok");
+  }, 30_000);
+
+  it("refuses to start with an invalid policy file", async () => {
+    const badPolicy = path.join(policyDir, "bad.json");
+    writeFileSync(badPolicy, '{"version":1,"grants":[{"principal":"*"}]}');
+    const child = spawnSync(
+      process.execPath,
+      ["--import", "tsx", "src/server.ts"],
+      {
+        env: {
+          ...process.env,
+          NODE_ENV: "production",
+          AUDIT_HMAC_KEY: "ab".repeat(32),
+          FHIR_BASE_URL: "https://example.org/fhir",
+          PATIENT_POLICY_FILE: badPolicy,
+        },
+        input: "",
+        encoding: "utf8",
+        timeout: 20_000,
+      },
+    );
+    expect(child.status).toBe(1);
+    expect(child.stdout).toBe("");
+    expect(child.stderr).toContain("fatal: server failed");
+    expect(child.stderr).not.toContain("principal");
   }, 30_000);
 });
