@@ -231,6 +231,58 @@ Build first: `pnpm install && pnpm build` so `dist/server.js` exists.
 
 Restart Claude Desktop. The three tools appear under the server name in the tools menu.
 
+## Install in Claude Code
+
+Build first (`pnpm install && pnpm build`), then register the stdio server. Use an absolute path to `dist/server.js` and to a Node 26 binary if your shell resolves an older one.
+
+```sh
+claude mcp add hipaa-fhir-mcp \
+  -e FHIR_BASE_URL=https://r4.smarthealthit.org \
+  -e CALLER_IDENTITY=claude-code-local \
+  -e AUDIT_HMAC_KEY=<output-of-openssl-rand-hex-32> \
+  -e NODE_ENV=development \
+  -- node /absolute/path/to/hipaa-fhir-mcp/dist/server.js
+```
+
+The default scope is local to the current project. Add `-s user` to make it available in every project. `claude mcp list` shows whether the server connected; inside a session, `/mcp` lists its three tools.
+
+## Install in Codex
+
+Codex reads MCP servers from `~/.codex/config.toml` (or a trusted project's `.codex/config.toml`); the CLI and the IDE extension share it. Either run:
+
+```sh
+codex mcp add hipaa-fhir-mcp \
+  --env FHIR_BASE_URL=https://r4.smarthealthit.org \
+  --env CALLER_IDENTITY=codex-local \
+  --env AUDIT_HMAC_KEY=<output-of-openssl-rand-hex-32> \
+  --env NODE_ENV=development \
+  -- node /absolute/path/to/hipaa-fhir-mcp/dist/server.js
+```
+
+or add the table by hand:
+
+```toml
+[mcp_servers.hipaa-fhir-mcp]
+command = "node"
+args = ["/absolute/path/to/hipaa-fhir-mcp/dist/server.js"]
+
+[mcp_servers.hipaa-fhir-mcp.env]
+FHIR_BASE_URL = "https://r4.smarthealthit.org"
+CALLER_IDENTITY = "codex-local"
+AUDIT_HMAC_KEY = "<output-of-openssl-rand-hex-32>"
+NODE_ENV = "development"
+```
+
+`/mcp` in the Codex TUI shows the active servers. See the [Codex MCP documentation](https://developers.openai.com/codex/mcp) for options.
+
+In every client the HMAC key ends up in a local config file. Keep that file private, use a key that exists only for this demo, and point `FHIR_BASE_URL` only at synthetic data.
+
+## MCP Registry
+
+[`server.json`](server.json) describes the released Desktop bundle for the [official MCP Registry](https://registry.modelcontextprotocol.io) as `io.github.tanya-ok/hipaa-fhir-mcp`. It points at the `.mcpb` asset of a GitHub release and pins its SHA-256, so no npm package is needed. On each release, update `version`, the asset URL and `fileSha256` from the release's `.sha256` file, then publish with `mcp-publisher login github` and `mcp-publisher publish`. The registry does not review servers; a listing is not a security or compliance claim.
+
+This server is not submitted to the Claude Directory. It is a prototype on synthetic data, and a public directory listing for a HIPAA-named server would read as production readiness.
+
 ## Production deployment notes
 
 A production deployment replaces the sandbox with AWS HealthLake and the stubs with real implementations. A sketch:
