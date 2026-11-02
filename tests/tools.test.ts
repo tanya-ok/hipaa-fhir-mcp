@@ -10,6 +10,7 @@ import type {
   Observation,
   Patient,
 } from "../src/fhir/types.js";
+import { requestContext } from "../src/security/context.js";
 import {
   GetMedicationListInput,
   getMedicationList,
@@ -204,6 +205,8 @@ describe("tools", () => {
       config,
       fhir: client,
       audit,
+      authorizer: { authorize: () => true },
+      context: requestContext("synthetic-tester", "local-synthetic"),
     };
   }
 

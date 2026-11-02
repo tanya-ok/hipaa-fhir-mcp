@@ -10,6 +10,7 @@ For every row we distinguish two states:
 
 | Control | Standard | Prototype | Production |
 |---|---|---|---|
+| Patient-level access | §164.312(a)(1) | Deny-by-default local policy: exact principal, patient and tool, checked before any FHIR request and audited on denial. Stdio principals are labelled local fixtures; the Kubernetes gateway uses the verified SPIFFE peer. This is not SMART authorization or clinical consent. | SMART scopes and consent from the EHR authorization server, with the policy source under change control. |
 | Unique user identification | §164.312(a)(2)(i) | Stdio uses the `CALLER_IDENTITY` placeholder. The Kubernetes gateway derives each invocation identity from a verified SPIRE mTLS peer through the bridge. | Replaced by SPIFFE SVID (`spiffe://.../hipaa-fhir-mcp`) fetched from the Workload API. Upstream human identity carried in the SMART access token claims. See `src/security/spiffe.ts`. |
 | Emergency access procedure | §164.312(a)(2)(ii) | Not implemented - prototype is read-only against a sandbox. | Documented break-glass role with mandatory audit review and time-bound STS credentials; CMK key policy grants temporary `kms:Decrypt` with `Condition.DateLessThan`. |
 | Automatic logoff | §164.312(a)(2)(iii) | Process is short-lived per MCP stdio session. | SMART access tokens are minted with short TTL; session invalidation propagates via token revocation at the FHIR AS. |

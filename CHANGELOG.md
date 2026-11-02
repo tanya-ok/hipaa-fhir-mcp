@@ -14,6 +14,7 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ### Security
 
+- **Breaking:** per-patient authorization before any FHIR request. Tools deny by default until `PATIENT_POLICY_FILE` and, for stdio, `LOCAL_SYNTHETIC_PRINCIPAL` are set; `createFhirMcpServer` now takes an authorizer and a request context provider. An invalid policy stops startup. This is a local policy, not SMART authorization.
 - Moved zod from 3.25.76 to 4.6.7 to address GHSA-mrhx-c7xc-m3w5, which has no fixed 3.x release. Configuration validation uses the zod 4 URL, custom issue and error flattening APIs.
 
 ## [0.4.0] - 2026-10-13

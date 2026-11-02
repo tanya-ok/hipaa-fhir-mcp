@@ -18,6 +18,14 @@ export const ConfigSchema = z
       .optional(),
     FHIR_AUTH_TOKEN: z.string().min(1).optional(),
     CALLER_IDENTITY: z.string().min(1).default("anonymous-dev"),
+    PATIENT_POLICY_FILE: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.string().min(1).optional(),
+    ),
+    LOCAL_SYNTHETIC_PRINCIPAL: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.string().min(1).max(256).optional(),
+    ),
     AUDIT_LOG_FILE: z.preprocess(
       (value) => (value === "" ? undefined : value),
       z.string().min(1).optional(),

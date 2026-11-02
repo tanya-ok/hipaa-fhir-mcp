@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "grants": [
+    {
+      "principal": "local-synthetic-operator",
+      "patients": ["replace-with-a-synthetic-patient-id"],
+      "tools": ["get_patient", "search_observations", "get_medication_list"]
+    }
+  ]
+}
