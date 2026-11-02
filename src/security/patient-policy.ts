@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from "node:fs";
+import { closeSync, openSync, readSync } from "node:fs";
 import { z } from "zod";
 import { PatientIdSchema } from "../fhir/schemas.js";
 import type { RequestContext } from "./context.js";
@@ -82,15 +82,25 @@ export function createPatientAuthorizer(
   return Object.freeze(authorizer);
 }
 
+/** One bounded read from one descriptor, so the size check and the content cannot differ. */
+function readPolicy(path: string): string {
+  const fd = openSync(path, "r");
+  try {
+    const buffer = Buffer.alloc(MAX_POLICY_BYTES + 1);
+    const length = readSync(fd, buffer, 0, buffer.length, 0);
+    if (length > MAX_POLICY_BYTES)
+      throw new Error("patient policy file is too large");
+    return buffer.toString("utf8", 0, length);
+  } finally {
+    closeSync(fd);
+  }
+}
+
 export function loadPatientAuthorizer(
   path: string | undefined,
 ): PatientAuthorizer {
   if (path === undefined) return DENY_ALL;
-  if (statSync(path).size > MAX_POLICY_BYTES)
-    throw new Error("patient policy file is too large");
-  const parsed = PatientPolicySchema.safeParse(
-    JSON.parse(readFileSync(path, "utf8")),
-  );
+  const parsed = PatientPolicySchema.safeParse(JSON.parse(readPolicy(path)));
   if (!parsed.success) throw new Error("patient policy file is invalid");
   return createPatientAuthorizer(parsed.data);
 }
