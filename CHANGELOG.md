@@ -8,16 +8,25 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-24
+
 ### Added
 
+- A release workflow step that publishes `server.json` to the official MCP Registry when a GitHub release is published, with the bundle checksum verified and GitHub OIDC login.
 - Install instructions for Claude Code and Codex, and a `server.json` that lists the released Desktop bundle in the official MCP Registry.
 
 ### Changed
 
 - Moved vitest from 4.1.12 to 5.0.5 and Biome from 2.5.14 to 2.6.3. The test suite needed no changes. Biome 2.6 formats Markdown and YAML by default; the Markdown and YAML formatters are turned off and `pnpm-lock.yaml` is excluded, while the Markdown and YAML linters stay on.
 
+### Fixed
+
+- The Desktop bundle build copies `pnpm-workspace.yaml` into its staging folder, so the frozen production install accepts the lockfile overrides, and removes it before packing.
+- The stdio test reads the expected server version from `package.json`.
+
 ### Security
 
+- Updated transitive `hono` and `@hono/node-server` through the MCP SDK; `pnpm audit --audit-level moderate` is clean.
 - Moved zod from 3.25.76 to 4.6.7 to address GHSA-mrhx-c7xc-m3w5, which has no fixed 3.x release. Configuration validation uses the zod 4 URL, custom issue and error flattening APIs.
 
 ## [0.4.0] - 2026-10-13
@@ -135,6 +144,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
+[0.5.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.3.0
 [0.1.2]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.1.2
