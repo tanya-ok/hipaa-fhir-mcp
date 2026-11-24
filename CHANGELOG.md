@@ -10,6 +10,10 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ### Added
 
+- `hipaa-fhir-mcp-http`: Streamable HTTP transport (stateless) with SHA-256-hashed bearer tokens mapped to policy principals, or a public demo mode pinned to the synthetic SMART sandbox; health endpoint, per-address rate limit, 64 KB body limit, optional Host pinning, and audited rejection of invalid tool calls.
+
+### Added
+
 - Five read-only tools: `get_patient_summary` (patient, active conditions, allergies and active medications in one call), `get_conditions`, `get_allergies`, `get_immunizations` and `get_encounters` with an optional `since` date. Each needs its own grant in the patient policy and writes one audit record.
 - An over-limit search now returns "Too many results (more than 200); narrow the request" instead of the generic failure text.
 
