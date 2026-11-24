@@ -1,0 +1,89 @@
+name: image
+
+# Builds a multi-arch image for a published release, pushes it to GHCR,
+# attaches SBOM and provenance attestations and signs it keylessly with cosign.
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+concurrency:
+  group: image-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Check the version matches the tag
+        id: version
+        run: |
+          set -euo pipefail
+          version="$(jq -r .version package.json)"
+          test "$TAG" = "v${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: mode=max
+          sbom: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.licenses=Apache-2.0
+
+      - uses: sigstore/cosign-installer@881c63bd87e38389154debd8331404ce7ca8a3ab # v4.1.4
+
+      - name: Sign the image by digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: List tools from the pushed image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          key="$(openssl rand -hex 32)"
+          {
+            printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}'
+            printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}'
+            printf '%s\n' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+            sleep 3
+          } | docker run --rm -i --network none \
+                -e FHIR_BASE_URL=https://r4.smarthealthit.org \
+                -e AUDIT_HMAC_KEY="$key" \
+                "${IMAGE}@${DIGEST}" > "$RUNNER_TEMP/tools.jsonl"
+          want="$(jq -c '[.tools[].name] | sort' manifest.json)"
+          jq -se --argjson want "$want" '[.[] | select(.id == 2) | .result.tools[].name] | sort == $want' "$RUNNER_TEMP/tools.jsonl"

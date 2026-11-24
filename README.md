@@ -210,6 +210,18 @@ pnpm check:fix      # apply Biome fixes
 pnpm check:phi      # PHI shape sweep
 ```
 
+## Container image
+
+Each release publishes a multi-arch image (amd64, arm64) with SBOM and provenance attestations, signed keylessly with cosign:
+
+```sh
+docker pull ghcr.io/tanya-ok/hipaa-fhir-mcp:latest
+cosign verify ghcr.io/tanya-ok/hipaa-fhir-mcp:latest \
+  --certificate-identity-regexp '^https://github.com/tanya-ok/hipaa-fhir-mcp/\.github/workflows/image\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+The default command runs the stdio server; pass `dist/http-server.js` as the command for Streamable HTTP. The image runs as the non-root `node` user and has no shell entry point beyond `node`.
 ## Run over HTTP
 
 `hipaa-fhir-mcp-http` serves MCP over Streamable HTTP (stateless) at `POST /mcp`, with `GET /healthz` for health checks. It refuses to start unless exactly one of these is set:
