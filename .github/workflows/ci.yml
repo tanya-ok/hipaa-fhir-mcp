@@ -59,3 +59,29 @@ jobs:
 
       - name: Desktop bundle payload gate cases
         run: pnpm check:mcpb
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the image
+        run: docker build --tag hipaa-fhir-mcp:ci .
+
+      - name: List tools over stdio in the container
+        run: |
+          set -euo pipefail
+          key="$(openssl rand -hex 32)"
+          {
+            printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}'
+            printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}'
+            printf '%s\n' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+            sleep 3
+          } | docker run --rm -i --network none \
+                -e FHIR_BASE_URL=https://r4.smarthealthit.org \
+                -e AUDIT_HMAC_KEY="$key" \
+                hipaa-fhir-mcp:ci > "$RUNNER_TEMP/tools.jsonl"
+          jq -se '[.[] | select(.id == 2) | .result.tools[].name] | sort == ["get_medication_list","get_patient","search_observations"]' "$RUNNER_TEMP/tools.jsonl"
