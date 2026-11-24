@@ -8,6 +8,10 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Added
+
+- Install instructions for Claude Code and Codex, and a `server.json` that lists the released Desktop bundle in the official MCP Registry.
+
 ### Changed
 
 - Moved vitest from 4.1.12 to 5.0.5 and Biome from 2.5.14 to 2.6.3. The test suite needed no changes. Biome 2.6 formats Markdown and YAML by default; the Markdown and YAML formatters are turned off and `pnpm-lock.yaml` is excluded, while the Markdown and YAML linters stay on.
@@ -19,6 +23,7 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 ## [0.4.0] - 2026-10-13
 
 ### Added
+
 
 - Transport-independent MCP server factory (`src/mcp.ts`) with a request-local caller identity provider, and a shared Kubernetes gateway (`deploy/kubernetes/fhir-gateway.mjs`) that serves the three tools over SPIRE mTLS with resource-bound OAuth and verified SPIFFE caller identity. The gateway uses an offline synthetic fixture and depends on the sibling `mcp-svid-auth` lab; it is not standalone.
 - Kubernetes probe (`deploy/kubernetes/probe_fhir.py`) that requires explicit certificate-denial alerts.
@@ -64,6 +69,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 
 ### Added
 
+
 - `manifest.json`: Claude Desktop Extension (MCPB) manifest. Declares the three tools, the Node entry point, and four `user_config` fields (FHIR base URL, caller identity, audit HMAC key, audit log file path). Lets a non-developer install the prototype via `Settings -> Extensions -> Install Extension...` without editing `claude_desktop_config.json`. The HMAC key field is marked `sensitive: true` so Desktop encrypts it via the OS keychain.
 - `.github/workflows/release.yml`: tag-triggered release workflow. On `v*` tag push, runs typecheck/test/build/lint/PHI-sweep, prunes dev dependencies, validates the manifest, packs the `.mcpb` artifact, and publishes a GitHub release with the artifact attached and auto-generated notes.
 - `pnpm package:mcpb` script: local sanity check that builds and packs the extension. Output is fat locally because dev dependencies remain installed; the CI workflow produces the slim release artifact.
@@ -90,6 +96,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 
 ### Added
 
+
 - CodeQL workflow with the `security-extended` query pack for JavaScript/TypeScript (`.github/workflows/codeql.yml`).
 - gitleaks workflow scanning the full git history on every push and pull request (`.github/workflows/gitleaks.yml`).
 - Dependabot configuration with weekly grouped PRs for npm, GitHub Actions, and Docker base images, plus ad-hoc PRs from security advisories (`.github/dependabot.yml`).
@@ -113,6 +120,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 ## [0.1.0] - 2026-04-26
 
 ### Added
+
 
 - MCP server entry point over stdio (`src/server.ts`).
 - Three FHIR R4 tools: `get_patient`, `search_observations`, `get_medication_list`.
