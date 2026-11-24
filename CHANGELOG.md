@@ -10,6 +10,14 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ### Added
 
+- Release workflow `image.yml`: multi-arch image on GHCR with SBOM and provenance attestations, keyless cosign signature, and a tools smoke test on the pushed digest.
+
+### Changed
+
+- The base image is pinned by digest. The image entry point is `node` with `dist/server.js` as the default command, so `dist/http-server.js` can be passed instead.
+
+### Added
+
 - Five read-only tools: `get_patient_summary` (patient, active conditions, allergies and active medications in one call), `get_conditions`, `get_allergies`, `get_immunizations` and `get_encounters` with an optional `since` date. Each needs its own grant in the patient policy and writes one audit record.
 - An over-limit search now returns "Too many results (more than 200); narrow the request" instead of the generic failure text.
 
