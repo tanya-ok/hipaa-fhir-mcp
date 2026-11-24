@@ -38,6 +38,8 @@ try {
   for (const name of [
     "package.json",
     "pnpm-lock.yaml",
+    // pnpm reads overrides from here; without it the frozen install refuses the lockfile.
+    "pnpm-workspace.yaml",
     "manifest.json",
     "LICENSE",
   ]) {
@@ -63,6 +65,7 @@ try {
     `${JSON.stringify(pkg, null, 2)}\n`,
   );
   await rm(join(stage, "pnpm-lock.yaml"));
+  await rm(join(stage, "pnpm-workspace.yaml"));
   await writeFile(
     join(stage, ".mcpbignore"),
     ".pnpm/**\nnode_modules/.pnpm/**\nnode_modules/.modules.yaml\nnode_modules/.pnpm-workspace-state-v1.json\n**/*.pem\n**/*.key\n**/.env*\n",

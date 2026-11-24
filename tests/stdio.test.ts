@@ -1,6 +1,13 @@
+import { readFileSync } from "node:fs";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { describe, expect, it } from "vitest";
+
+const { version } = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+) as {
+  version: string;
+};
 
 describe("actual stdio process", () => {
   it("audits accepted, rejected and failed calls exactly once without contaminating stdout", async () => {
@@ -29,7 +36,7 @@ describe("actual stdio process", () => {
     client.onerror = (error) => protocolErrors.push(error);
     try {
       await client.connect(transport);
-      expect(client.getServerVersion()?.version).toBe("0.4.0");
+      expect(client.getServerVersion()?.version).toBe(version);
       const listed = await client.listTools();
       expect(listed.tools).toHaveLength(3);
       expect(
