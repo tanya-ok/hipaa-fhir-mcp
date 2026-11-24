@@ -3,7 +3,7 @@
   "name": "hipaa-fhir-mcp",
   "display_name": "HIPAA FHIR MCP",
   "version": "0.6.0",
-  "description": "HIPAA-aligned MCP server exposing eight read-only FHIR R4 tools with HMAC-keyed audit logging.",
+  "description": "HIPAA-aligned MCP server exposing nine read-only FHIR R4 tools with HMAC-keyed audit logging.",
   "long_description": "Exposes a patient summary plus Patient, Observation, MedicationRequest, Condition, AllergyIntolerance, Immunization and Encounter reads to Claude, each behind a per-patient grant. Implements the §164.312(b) audit invariant: every tool call emits one structured JSON record where the patient id is HMAC-SHA-256 hashed with a server-side secret before it is written. Plaintext patient ids are never logged. Defaults to the public synthetic SMART sandbox at https://r4.smarthealthit.org. Stubs for SMART OAuth, SPIFFE workload identity, and KMS envelope encryption document the production path without faking compliance.",
   "author": {
     "name": "Tanya Babitskaya",
@@ -65,6 +65,10 @@
     {
       "name": "get_patient_summary",
       "description": "Patient, active conditions, allergies and active medications in one call."
+    },
+    {
+      "name": "find_patient",
+      "description": "Find patients in your grant by identifier and return their FHIR ids."
     }
   ],
   "user_config": {

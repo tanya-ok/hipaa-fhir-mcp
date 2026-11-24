@@ -67,6 +67,7 @@ function harness(
     getAllergies: vi.fn(async () => []),
     getImmunizations: vi.fn(async () => []),
     getEncounters: vi.fn(async () => []),
+    findPatients: vi.fn(async () => []),
   } satisfies FhirClient;
   const deps: ToolDeps = { config, audit, fhir, authorizer, context };
   return { deps, fhir, record };

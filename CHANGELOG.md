@@ -10,6 +10,8 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ### Added
 
+- `find_patient`: look up patients by identifier (system|value); only matches inside the caller's `find_patient` grant are returned, and a caller without that grant is refused before any FHIR request. The identifier is not logged.
+- `typecheck` now also checks the tests.
 - Release workflow `image.yml`: multi-arch image on GHCR with SBOM and provenance attestations, keyless cosign signature, and a tools smoke test on the pushed digest.
 - `hipaa-fhir-mcp-http`: Streamable HTTP transport (stateless) with SHA-256-hashed bearer tokens mapped to policy principals, or a public demo mode pinned to the synthetic SMART sandbox; health endpoint, per-address rate limit, 64 KB body limit, optional Host pinning, and audited rejection of invalid tool calls.
 - Five read-only tools: `get_patient_summary` (patient, active conditions, allergies and active medications in one call), `get_conditions`, `get_allergies`, `get_immunizations` and `get_encounters` with an optional `since` date. Each needs its own grant in the patient policy and writes one audit record.

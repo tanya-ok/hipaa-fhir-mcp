@@ -148,6 +148,17 @@ export type AllergyIntolerance = z.infer<typeof AllergyIntoleranceSchema>;
 export type Immunization = z.infer<typeof ImmunizationSchema>;
 export type Encounter = z.infer<typeof EncounterSchema>;
 
+export const IdentifierSearchSchema = z
+  .string()
+  .min(1)
+  .max(256)
+  .regex(/^[\w\-.:%/]+\|[\w\-.:%/]+$|^[\w\-.:%/]+$/, {
+    message: "identifier must be system|value or value",
+  })
+  .describe(
+    "Patient identifier to look up, as system|value (for example urn:oid:1.2.36.146.595.217.0.1|12345) or a bare value. Only patients in your grant are returned.",
+  );
+
 export const SinceDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "since must be YYYY-MM-DD" })
