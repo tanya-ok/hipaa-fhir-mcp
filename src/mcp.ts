@@ -77,8 +77,14 @@ export function createFhirMcpServer(
     {
       title: "Get FHIR Patient",
       description:
-        "Fetch a FHIR R4 Patient resource by id. Emits an audit record with a hashed patient id - no PHI is ever logged.",
+        'Read one FHIR R4 Patient resource by its logical id from the configured FHIR server (by default the public synthetic SMART sandbox). Use it first to confirm a patient exists and to get gender, birth date and active status; use search_observations or get_medication_list for clinical data. Read only. Returns the Patient as JSON with only id, active, gender and birthDate. Every call writes one audit record in which the patient id is HMAC-hashed; no PHI is logged. Other failures return the fixed text "FHIR request failed" with no server detail. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request.',
       inputSchema: GetPatientInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async (input) => {
       try {
@@ -95,8 +101,14 @@ export function createFhirMcpServer(
     {
       title: "Search FHIR Observations",
       description:
-        "Search FHIR R4 Observations for a patient by code (e.g. `http://loinc.org|8867-4`). Returns an array of Observation resources.",
+        'Search FHIR R4 Observation resources for one patient filtered by a code, for example vital signs or lab results. Use it when you know the code to look for (LOINC is typical: http://loinc.org|8867-4 is heart rate); use get_patient to check the patient first. Read only. Returns a JSON array of Observations with status, code, subject, effective or issued time and the value, at most 200 results across up to 5 pages of 50; larger result sets fail instead of being truncated. Every call writes one hashed audit record. Other failures return the fixed text "FHIR request failed" with no server detail. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request.',
       inputSchema: SearchObservationsInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async (input) => {
       try {
@@ -113,8 +125,14 @@ export function createFhirMcpServer(
     {
       title: "Get Medication List",
       description:
-        "Fetch active MedicationRequest resources for a patient. Returns an array of MedicationRequest resources.",
+        'List the active FHIR R4 MedicationRequest resources for one patient. Use it to see what is currently prescribed; inactive, stopped and completed requests are excluded. Read only. Returns a JSON array of MedicationRequests with status, intent, subject, the medication code or reference and authoredOn, at most 200 results. Every call writes one hashed audit record. Other failures return the fixed text "FHIR request failed" with no server detail. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request.',
       inputSchema: GetMedicationListInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async (input) => {
       try {

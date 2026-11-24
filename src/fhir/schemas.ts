@@ -8,7 +8,10 @@ export const PatientIdSchema = z
   .max(64)
   .regex(/^(?!\.{1,2}$)[A-Za-z0-9.-]+$/, {
     message: "patient_id must match FHIR id syntax",
-  });
+  })
+  .describe(
+    "FHIR logical id of the Patient, 1 to 64 letters, digits, dots or hyphens, for example a sandbox id returned by the FHIR server. Not a name, MRN or other identifier.",
+  );
 const text = z.string().min(1).max(256);
 const coding = z.object({ system: text.optional(), code: text.optional() });
 const concept = z.object({ coding: z.array(coding).max(32).optional() });
