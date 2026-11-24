@@ -110,6 +110,8 @@ left pane lists the three registered tools:
 - `search_observations`
 - `get_medication_list`
 
+Tool calls are denied unless the server has a patient policy. Copy `patient-policy.example.json`, put `<PATIENT_ID>` in `patients`, and start the server with `PATIENT_POLICY_FILE` and `LOCAL_SYNTHETIC_PRINCIPAL=local-synthetic-operator`.
+
 Pick `get_patient`, paste `<PATIENT_ID>` into the input field, and run it.
 The right pane returns a FHIR R4 `Patient` resource as JSON.
 

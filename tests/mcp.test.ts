@@ -5,6 +5,8 @@ import { AuditLogger } from "../src/audit/logger.js";
 import { ConfigSchema } from "../src/config.js";
 import type { FhirClient } from "../src/fhir/client.js";
 import { createFhirMcpServer, toolInputSchemas } from "../src/mcp.js";
+import { requestContext } from "../src/security/context.js";
+import { createPatientAuthorizer } from "../src/security/patient-policy.js";
 
 describe("transport-independent FHIR MCP", () => {
   it("keeps concurrent verified callers separate and returns fixed errors", async () => {
@@ -30,9 +32,24 @@ describe("transport-independent FHIR MCP", () => {
     };
     const sessions = await Promise.all(
       ["one", "two"].map(async (caller) => {
+        const principal = `spiffe://example.org/${caller}`;
         const server = createFhirMcpServer(
-          { config, fhir, audit },
-          () => `spiffe://example.org/${caller}`,
+          {
+            config,
+            fhir,
+            audit,
+            authorizer: createPatientAuthorizer({
+              version: 1,
+              grants: [
+                {
+                  principal,
+                  patients: ["synthetic-ok", "synthetic-error"],
+                  tools: ["get_patient"],
+                },
+              ],
+            }),
+          },
+          () => requestContext(principal, "spiffe-mtls+token"),
         );
         const client = new Client({ name: "synthetic-test", version: "1" });
         const [clientTransport, serverTransport] =

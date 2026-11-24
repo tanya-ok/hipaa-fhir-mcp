@@ -1,0 +1,80 @@
+name: registry
+
+# Publishes server.json to the official MCP Registry once a release is published,
+# so the .mcpb asset URL is public. Registry versions cannot be deleted.
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+concurrency:
+  group: registry-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+      MCP_PUBLISHER_VERSION: v1.8.8
+      MCP_PUBLISHER_SHA256: 09f1fa70ee146b640584274a1a6b2b8a0310b05d4321fa9224e6df6a016d67f4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Check versions match the tag
+        id: version
+        run: |
+          set -euo pipefail
+          version="$(jq -r .version package.json)"
+          test "$TAG" = "v${version}"
+          test "$(jq -r .version manifest.json)" = "$version"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Download the published bundle and verify its checksum
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          base="https://github.com/${REPO}/releases/download/${TAG}"
+          bundle="hipaa-fhir-mcp-${VERSION}.mcpb"
+          curl --fail --silent --show-error --location --proto '=https' "${base}/${bundle}" -o "$bundle"
+          curl --fail --silent --show-error --location --proto '=https' "${base}/${bundle}.sha256" -o "${bundle}.sha256"
+          sha256sum --check "${bundle}.sha256"
+          echo "BUNDLE_URL=${base}/${bundle}" >> "$GITHUB_ENV"
+          echo "BUNDLE_SHA256=$(cut -d' ' -f1 "${bundle}.sha256")" >> "$GITHUB_ENV"
+
+      - name: Point server.json at this release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          jq --arg v "$VERSION" --arg url "$BUNDLE_URL" --arg sha "$BUNDLE_SHA256" \
+            '.version = $v | .packages[0].identifier = $url | .packages[0].fileSha256 = $sha' \
+            server.json > server.json.new
+          mv server.json.new server.json
+          jq -e '.name == "io.github.tanya-ok/hipaa-fhir-mcp"' server.json
+          cat server.json
+
+      - name: Install mcp-publisher (pinned, checksum verified)
+        run: |
+          set -euo pipefail
+          url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location --proto '=https' "$url" -o mcp-publisher.tar.gz
+          echo "${MCP_PUBLISHER_SHA256}  mcp-publisher.tar.gz" | sha256sum --check
+          tar -xzf mcp-publisher.tar.gz mcp-publisher
+
+      - name: Log in with GitHub OIDC and publish
+        run: |
+          set -euo pipefail
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

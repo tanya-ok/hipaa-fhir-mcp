@@ -10,6 +10,8 @@ The goal is to show the intersection of four things that rarely appear in the sa
 
 Documentation site: <https://tanya-ok.github.io/hipaa-fhir-mcp/>
 
+[![hipaa-fhir-mcp on Glama](https://glama.ai/mcp/servers/@tanya-ok/hipaa-fhir-mcp/badge)](https://glama.ai/mcp/servers/@tanya-ok/hipaa-fhir-mcp)
+
 ## Why this exists
 
 AI agents are increasingly given direct access to data systems through MCP. In healthcare, that data is regulated and the required controls are specific: HIPAA §164.312 names them. Most public MCP examples ignore the regulatory context; most HIPAA write-ups predate AI agents.
@@ -182,6 +184,19 @@ pnpm check:fix      # apply Biome fixes
 pnpm check:phi      # PHI shape sweep
 ```
 
+## Patient access policy
+
+Every tool checks the caller before any FHIR request and denies by default. A grant is an exact match of principal, patient and tool, loaded from `PATIENT_POLICY_FILE` (see [`patient-policy.example.json`](patient-policy.example.json)). An invalid policy file stops the server at startup. A denial returns `Patient access not authorized` and writes one audit record with `patient_not_authorized`.
+
+| Mode | Where the principal comes from | Default |
+|---|---|---|
+| Standalone stdio | `LOCAL_SYNTHETIC_PRINCIPAL`, a labelled local fixture. It is not authenticated | Every call denied |
+| Kubernetes gateway | The verified SPIFFE mTLS peer, already matched to the token subject | One synthetic grant in the gateway |
+
+`CALLER_IDENTITY` remains an audit label and never grants access. Tool arguments cannot supply an identity or a grant. This is a local policy for the prototype, not SMART authorization or clinical consent; a compromised caller can still misuse the patients it is granted.
+
+Use synthetic patient ids only. To try the sandbox, copy the example, put a sandbox patient id in `patients`, and set both variables.
+
 ## Install in Claude Desktop
 
 Two paths. The local extension bundle installs natively in Claude Desktop; this was verified on 2026-10-13. The manual config is for active development.
@@ -190,7 +205,7 @@ Two paths. The local extension bundle installs natively in Claude Desktop; this 
 
 1. Build a local bundle with `pnpm package:mcpb` (requires Python 3 for the archive gate). This prepares a file without publishing a release. An existing bundle is not overwritten.
 2. In Claude Desktop: `Settings -> Extensions -> Install Extension...` and select the file.
-3. The form prompts for four values: FHIR base URL, caller identity, audit HMAC key (required), audit log file path. The HMAC key is stored encrypted via your OS keychain. Generate one with `openssl rand -hex 32`. The other three have working defaults for the public sandbox.
+3. The form prompts for FHIR base URL, caller identity, audit HMAC key (required), audit log file path, patient policy file and local synthetic principal. Without the last two, every tool call is denied. The HMAC key is stored encrypted via your OS keychain. Generate one with `openssl rand -hex 32`. The other three have working defaults for the public sandbox.
 4. Restart Claude Desktop. The three tools appear in the tools menu under `hipaa-fhir-mcp`.
 
 Claude Desktop's built-in Node runtime is 24.x. The manifest requires Node 26 or newer, so Desktop runs the server with the system Node 26 found on its `PATH`. Install Node 26 system-wide before installing the extension.
@@ -218,7 +233,9 @@ Minimal config: add this to `~/Library/Application Support/Claude/claude_desktop
         "CALLER_IDENTITY": "claude-desktop-local",
         "AUDIT_HMAC_KEY": "<paste-output-of-openssl-rand-hex-32>",
         "NODE_ENV": "development",
-        "AUDIT_LOG_FILE": "/absolute/path/to/hipaa-fhir-mcp/audit-claude.log"
+        "AUDIT_LOG_FILE": "/absolute/path/to/hipaa-fhir-mcp/audit-claude.log",
+        "PATIENT_POLICY_FILE": "/absolute/path/to/patient-policy.json",
+        "LOCAL_SYNTHETIC_PRINCIPAL": "local-synthetic-operator"
       }
     }
   }
@@ -230,6 +247,58 @@ Use absolute paths. macOS GUI apps do not always inherit your shell `PATH`, so a
 Build first: `pnpm install && pnpm build` so `dist/server.js` exists.
 
 Restart Claude Desktop. The three tools appear under the server name in the tools menu.
+
+## Install in Claude Code
+
+Build first (`pnpm install && pnpm build`), then register the stdio server. Use an absolute path to `dist/server.js` and to a Node 26 binary if your shell resolves an older one.
+
+```sh
+claude mcp add hipaa-fhir-mcp \
+  -e FHIR_BASE_URL=https://r4.smarthealthit.org \
+  -e CALLER_IDENTITY=claude-code-local \
+  -e AUDIT_HMAC_KEY=<output-of-openssl-rand-hex-32> \
+  -e NODE_ENV=development \
+  -- node /absolute/path/to/hipaa-fhir-mcp/dist/server.js
+```
+
+The default scope is local to the current project. Add `-s user` to make it available in every project. `claude mcp list` shows whether the server connected; inside a session, `/mcp` lists its three tools.
+
+## Install in Codex
+
+Codex reads MCP servers from `~/.codex/config.toml` (or a trusted project's `.codex/config.toml`); the CLI and the IDE extension share it. Either run:
+
+```sh
+codex mcp add hipaa-fhir-mcp \
+  --env FHIR_BASE_URL=https://r4.smarthealthit.org \
+  --env CALLER_IDENTITY=codex-local \
+  --env AUDIT_HMAC_KEY=<output-of-openssl-rand-hex-32> \
+  --env NODE_ENV=development \
+  -- node /absolute/path/to/hipaa-fhir-mcp/dist/server.js
+```
+
+or add the table by hand:
+
+```toml
+[mcp_servers.hipaa-fhir-mcp]
+command = "node"
+args = ["/absolute/path/to/hipaa-fhir-mcp/dist/server.js"]
+
+[mcp_servers.hipaa-fhir-mcp.env]
+FHIR_BASE_URL = "https://r4.smarthealthit.org"
+CALLER_IDENTITY = "codex-local"
+AUDIT_HMAC_KEY = "<output-of-openssl-rand-hex-32>"
+NODE_ENV = "development"
+```
+
+`/mcp` in the Codex TUI shows the active servers. See the [Codex MCP documentation](https://developers.openai.com/codex/mcp) for options.
+
+In every client the HMAC key ends up in a local config file. Keep that file private, use a key that exists only for this demo, and point `FHIR_BASE_URL` only at synthetic data.
+
+## MCP Registry
+
+[`server.json`](server.json) describes the released Desktop bundle for the [official MCP Registry](https://registry.modelcontextprotocol.io) as `io.github.tanya-ok/hipaa-fhir-mcp`. It points at the `.mcpb` asset of a GitHub release and pins its SHA-256, so no npm package is needed. On each release, update `version`, the asset URL and `fileSha256` from the release's `.sha256` file, then publish with `mcp-publisher login github` and `mcp-publisher publish`. The registry does not review servers; a listing is not a security or compliance claim.
+
+This server is not submitted to the Claude Directory. It is a prototype on synthetic data, and a public directory listing for a HIPAA-named server would read as production readiness.
 
 ## Production deployment notes
 
