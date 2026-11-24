@@ -1,5 +1,11 @@
 import { generateKeyPairSync, verify } from "node:crypto";
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import axios, {
@@ -322,5 +328,8 @@ describe("SMART configuration", () => {
     expect(() => loadPrivateKey(file)).toThrow("chmod 600");
     chmodSync(file, 0o600);
     expect(loadPrivateKey(file).asymmetricKeyType).toBe("ec");
+    const link = path.join(dir, "key-link.pem");
+    symlinkSync(file, link);
+    expect(() => loadPrivateKey(link)).toThrow("could not be read");
   });
 });

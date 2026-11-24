@@ -7,7 +7,13 @@ import {
   randomUUID,
   sign,
 } from "node:crypto";
-import { readFileSync, statSync } from "node:fs";
+import {
+  closeSync,
+  constants,
+  fstatSync,
+  openSync,
+  readFileSync,
+} from "node:fs";
 import { Agent } from "node:https";
 import axios, { type AxiosInstance } from "axios";
 import { z } from "zod";
@@ -212,14 +218,27 @@ export class SmartBackendTokens implements TokenSource {
 
 /** Reads the PEM key; refuses keys readable by group or others. */
 export function loadPrivateKey(path: string): KeyObject {
-  const mode = statSync(path).mode;
-  if (mode & 0o077)
-    throw new SmartAuthError(
-      "SMART private key file must not be readable by group or others (chmod 600)",
-    );
+  // One descriptor for the check and the read, so the file cannot change in between.
+  let fd: number;
   try {
-    return createPrivateKey(readFileSync(path, "utf8"));
+    fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   } catch {
     throw new SmartAuthError("SMART private key could not be read");
+  }
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile())
+      throw new SmartAuthError("SMART private key could not be read");
+    if (stat.mode & 0o077)
+      throw new SmartAuthError(
+        "SMART private key file must not be readable by group or others (chmod 600)",
+      );
+    try {
+      return createPrivateKey(readFileSync(fd, "utf8"));
+    } catch {
+      throw new SmartAuthError("SMART private key could not be read");
+    }
+  } finally {
+    closeSync(fd);
   }
 }
