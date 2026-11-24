@@ -14,7 +14,7 @@ WORKDIR /app
 RUN npm install -g corepack@0.36.0 && corepack enable
 
 # Install deps from lockfile for a reproducible build
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Compile TypeScript -> dist/
