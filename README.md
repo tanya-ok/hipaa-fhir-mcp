@@ -10,6 +10,8 @@ The goal is to show the intersection of four things that rarely appear in the sa
 
 Documentation site: <https://tanya-ok.github.io/hipaa-fhir-mcp/>
 
+[![hipaa-fhir-mcp on Glama](https://glama.ai/mcp/servers/@tanya-ok/hipaa-fhir-mcp/badge)](https://glama.ai/mcp/servers/@tanya-ok/hipaa-fhir-mcp)
+
 ## Why this exists
 
 AI agents are increasingly given direct access to data systems through MCP. In healthcare, that data is regulated and the required controls are specific: HIPAA §164.312 names them. Most public MCP examples ignore the regulatory context; most HIPAA write-ups predate AI agents.
