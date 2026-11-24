@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "grants": [
+    {
+      "principal": "public-demo",
+      "patients": [
+        "1ac8947d-038f-4cc7-81fa-a32e694187e8",
+        "06895d41-5937-4e83-9f3d-0af09db31c69",
+        "10fe9427-a075-4d8c-8af7-1d4d24f72112",
+        "11f2b925-43b2-45e4-ac34-7811a9eb9c1b",
+        "1826f231-5570-4f7b-ad55-b12f99ba8ced"
+      ],
+      "tools": [
+        "get_patient_summary",
+        "get_patient",
+        "search_observations",
+        "get_medication_list",
+        "get_conditions",
+        "get_allergies",
+        "get_immunizations",
+        "get_encounters",
+        "find_patient"
+      ]
+    }
+  ]
+}
