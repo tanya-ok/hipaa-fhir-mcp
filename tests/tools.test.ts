@@ -121,6 +121,16 @@ describe("audit logger", () => {
     expect(typeof parsed.timestamp).toBe("string");
   });
 
+  it("labels records with a stable key id that differs per key", async () => {
+    const a = new AuditLogger(makeConfig({ AUDIT_HMAC_KEY: "a".repeat(64) }));
+    const a2 = new AuditLogger(makeConfig({ AUDIT_HMAC_KEY: "A".repeat(64) }));
+    const b = new AuditLogger(makeConfig({ AUDIT_HMAC_KEY: "b".repeat(64) }));
+    expect(a.keyId).toMatch(/^[0-9a-f]{16}$/);
+    expect(a.keyId).toBe(a2.keyId);
+    expect(a.keyId).not.toBe(b.keyId);
+    expect(a.keyId).not.toContain("a".repeat(16));
+  });
+
   it("HMAC depends on the configured key", async () => {
     const auditA = new AuditLogger(
       makeConfig({ AUDIT_HMAC_KEY: "a".repeat(64) }),

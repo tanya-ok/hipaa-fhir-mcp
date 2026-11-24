@@ -10,6 +10,8 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ### Added
 
+- Audit records carry `key_id`, a one-way label of the HMAC key, so records stay attributable after the key is rotated.
+- README: a table mapping each security claim to the test that pins it, and a "Where it falls short" section.
 - `find_patient`: look up patients by identifier (system|value); only matches inside the caller's `find_patient` grant are returned, and a caller without that grant is refused before any FHIR request. The identifier is not logged.
 - `typecheck` now also checks the tests.
 - Release workflow `image.yml`: multi-arch image on GHCR with SBOM and provenance attestations, keyless cosign signature, and a tools smoke test on the pushed digest.
