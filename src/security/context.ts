@@ -3,7 +3,12 @@
  * credentials it has already verified; never from tool arguments or headers
  * the model controls.
  */
-export type Provenance = "spiffe-mtls+token" | "local-synthetic" | "none";
+export type Provenance =
+  | "spiffe-mtls+token"
+  | "http-bearer"
+  | "public-demo"
+  | "local-synthetic"
+  | "none";
 
 export interface RequestContext {
   readonly principal: string | null;
