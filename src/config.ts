@@ -1,5 +1,32 @@
 import { z } from "zod";
 
+const blankIsUnset = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema);
+
+const httpsUrl = z.url().refine((value) => {
+  const url = URL.parse(value);
+  return (
+    url !== null &&
+    url.protocol === "https:" &&
+    !url.username &&
+    !url.password &&
+    !url.search &&
+    !url.hash
+  );
+}, "must be an HTTPS URL without credentials, query or fragment");
+
+export const DEFAULT_SMART_SCOPE = [
+  "Patient",
+  "Observation",
+  "MedicationRequest",
+  "Condition",
+  "AllergyIntolerance",
+  "Immunization",
+  "Encounter",
+]
+  .map((type) => `system/${type}.rs`)
+  .join(" ");
+
 export const ConfigSchema = z
   .object({
     FHIR_BASE_URL: z
@@ -17,6 +44,19 @@ export const ConfigSchema = z
       }, "FHIR_BASE_URL must be an HTTPS base URL without credentials, query or fragment")
       .optional(),
     FHIR_AUTH_TOKEN: z.string().min(1).optional(),
+    SMART_CLIENT_ID: blankIsUnset(z.string().min(1).max(2048).optional()),
+    SMART_KEY_ID: blankIsUnset(z.string().min(1).max(256).optional()),
+    SMART_PRIVATE_KEY_FILE: blankIsUnset(z.string().min(1).optional()),
+    SMART_SCOPE: blankIsUnset(
+      z
+        .string()
+        .regex(/^system\/[A-Za-z*]+\.[a-z]+( system\/[A-Za-z*]+\.[a-z]+)*$/, {
+          message:
+            "SMART_SCOPE must be space-separated system scopes, for example system/Patient.rs",
+        })
+        .default(DEFAULT_SMART_SCOPE),
+    ),
+    SMART_TOKEN_URL: blankIsUnset(httpsUrl.optional()),
     CALLER_IDENTITY: z.string().min(1).default("anonymous-dev"),
     PATIENT_POLICY_FILE: z.preprocess(
       (value) => (value === "" ? undefined : value),
@@ -47,6 +87,34 @@ export const ConfigSchema = z
         path: ["AUDIT_HMAC_KEY"],
         message:
           "AUDIT_HMAC_KEY must not repeat one character in production. Generate one with: openssl rand -hex 32",
+      });
+    }
+    const smart = [
+      config.SMART_CLIENT_ID,
+      config.SMART_KEY_ID,
+      config.SMART_PRIVATE_KEY_FILE,
+    ];
+    if (smart.some(Boolean) && !smart.every(Boolean)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["SMART_CLIENT_ID"],
+        message:
+          "SMART Backend Services needs SMART_CLIENT_ID, SMART_KEY_ID and SMART_PRIVATE_KEY_FILE together",
+      });
+    }
+    if (smart.some(Boolean) && config.FHIR_AUTH_TOKEN !== undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["FHIR_AUTH_TOKEN"],
+        message:
+          "Use either FHIR_AUTH_TOKEN or SMART Backend Services, not both",
+      });
+    }
+    if (smart.some(Boolean) && !config.FHIR_BASE_URL) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["FHIR_BASE_URL"],
+        message: "FHIR_BASE_URL is required with SMART Backend Services",
       });
     }
     if (
