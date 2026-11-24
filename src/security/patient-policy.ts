@@ -7,6 +7,11 @@ export const TOOL_NAMES = [
   "get_patient",
   "search_observations",
   "get_medication_list",
+  "get_conditions",
+  "get_allergies",
+  "get_immunizations",
+  "get_encounters",
+  "get_patient_summary",
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
 

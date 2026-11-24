@@ -72,13 +72,20 @@ The prototype deliberately does not ship with fake production posture. Treating 
       └─────────────────────┘
 ```
 
-The three MCP tools exposed to Claude:
+The eight read-only MCP tools exposed to Claude. Each needs its own grant in the patient policy:
 
 | Tool | Input | Returns |
 |---|---|---|
+| `get_patient_summary` | `patient_id` | Patient, active conditions, allergies, active medications |
 | `get_patient` | `patient_id` | `Patient` resource |
 | `search_observations` | `patient_id`, `code` (e.g. `http://loinc.org\|8867-4`) | `Observation[]` |
-| `get_medication_list` | `patient_id` | `MedicationRequest[]` |
+| `get_medication_list` | `patient_id` | active `MedicationRequest[]` |
+| `get_conditions` | `patient_id` | `Condition[]` |
+| `get_allergies` | `patient_id` | `AllergyIntolerance[]` |
+| `get_immunizations` | `patient_id` | `Immunization[]` |
+| `get_encounters` | `patient_id`, optional `since` (`YYYY-MM-DD`) | `Encounter[]` |
+
+Results keep codes, statuses and dates only; display names, free text and notes are dropped. More than 200 results returns an error that asks the agent to narrow the request.
 
 Every invocation emits a structured audit record:
 
@@ -206,7 +213,7 @@ Two paths. The local extension bundle installs natively in Claude Desktop; this 
 1. Build a local bundle with `pnpm package:mcpb` (requires Python 3 for the archive gate). This prepares a file without publishing a release. An existing bundle is not overwritten.
 2. In Claude Desktop: `Settings -> Extensions -> Install Extension...` and select the file.
 3. The form prompts for FHIR base URL, caller identity, audit HMAC key (required), audit log file path, patient policy file and local synthetic principal. Without the last two, every tool call is denied. The HMAC key is stored encrypted via your OS keychain. Generate one with `openssl rand -hex 32`. The other three have working defaults for the public sandbox.
-4. Restart Claude Desktop. The three tools appear in the tools menu under `hipaa-fhir-mcp`.
+4. Restart Claude Desktop. The tools appear in the tools menu under `hipaa-fhir-mcp`.
 
 Claude Desktop's built-in Node runtime is 24.x. The manifest requires Node 26 or newer, so Desktop runs the server with the system Node 26 found on its `PATH`. Install Node 26 system-wide before installing the extension.
 
@@ -246,7 +253,7 @@ Use absolute paths. macOS GUI apps do not always inherit your shell `PATH`, so a
 
 Build first: `pnpm install && pnpm build` so `dist/server.js` exists.
 
-Restart Claude Desktop. The three tools appear under the server name in the tools menu.
+Restart Claude Desktop. The tools appear under the server name in the tools menu.
 
 ## Install in Claude Code
 

@@ -6,7 +6,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { AuditLogger } from "../src/audit/logger.js";
 import { ConfigSchema } from "../src/config.js";
-import type { FhirClient } from "../src/fhir/client.js";
+import { type FhirClient, FhirError } from "../src/fhir/client.js";
 import { createFhirMcpServer } from "../src/mcp.js";
 import {
   NO_CONTEXT,
@@ -22,6 +22,13 @@ import {
 } from "../src/security/patient-policy.js";
 import { getMedicationList } from "../src/tools/get-medication-list.js";
 import { getPatient } from "../src/tools/get-patient.js";
+import {
+  getAllergies,
+  getConditions,
+  getEncounters,
+  getImmunizations,
+  getPatientSummary,
+} from "../src/tools/patient-records.js";
 import { searchObservations } from "../src/tools/search-observations.js";
 import type { ToolDeps } from "../src/tools/types.js";
 
@@ -56,6 +63,10 @@ function harness(
     })),
     searchObservations: vi.fn(async () => []),
     getMedicationRequests: vi.fn(async () => []),
+    getConditions: vi.fn(async () => []),
+    getAllergies: vi.fn(async () => []),
+    getImmunizations: vi.fn(async () => []),
+    getEncounters: vi.fn(async () => []),
   } satisfies FhirClient;
   const deps: ToolDeps = { config, audit, fhir, authorizer, context };
   return { deps, fhir, record };
@@ -79,6 +90,36 @@ const tools = [
     run: (deps: ToolDeps, patient_id: string) =>
       getMedicationList({ patient_id }, deps),
     upstream: "getMedicationRequests",
+  },
+  {
+    name: "get_conditions",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getConditions({ patient_id }, deps),
+    upstream: "getConditions",
+  },
+  {
+    name: "get_allergies",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getAllergies({ patient_id }, deps),
+    upstream: "getAllergies",
+  },
+  {
+    name: "get_immunizations",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getImmunizations({ patient_id }, deps),
+    upstream: "getImmunizations",
+  },
+  {
+    name: "get_encounters",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getEncounters({ patient_id, since: "2024-01-01" }, deps),
+    upstream: "getEncounters",
+  },
+  {
+    name: "get_patient_summary",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getPatientSummary({ patient_id }, deps),
+    upstream: "getConditions",
   },
 ] as const;
 
@@ -189,6 +230,33 @@ describe("MCP boundary", () => {
         content: [{ type: "text", text: "Patient access not authorized" }],
       });
       expect(fhir.getPatient).not.toHaveBeenCalled();
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+
+  it("tells the agent to narrow an over-limit search without server detail", async () => {
+    const { deps, fhir } = harness(requestContext(A, "spiffe-mtls+token"));
+    fhir.getEncounters.mockRejectedValueOnce(
+      new FhirError("FHIR result limit exceeded"),
+    );
+    const { client, server } = await connect(deps, () => deps.context);
+    try {
+      expect(
+        await client.callTool({
+          name: "get_encounters",
+          arguments: { patient_id: PATIENT_A },
+        }),
+      ).toMatchObject({
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: "Too many results (more than 200); narrow the request",
+          },
+        ],
+      });
     } finally {
       await client.close();
       await server.close();

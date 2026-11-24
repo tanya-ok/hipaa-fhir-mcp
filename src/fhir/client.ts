@@ -3,6 +3,14 @@ import axios, { type AxiosInstance } from "axios";
 import type { z } from "zod";
 import type { Config } from "../config.js";
 import {
+  type AllergyIntolerance,
+  AllergyIntoleranceSchema,
+  type Condition,
+  ConditionSchema,
+  type Encounter,
+  EncounterSchema,
+  type Immunization,
+  ImmunizationSchema,
   MAX_PAGES,
   MAX_RESPONSE_BYTES,
   MAX_RESULTS,
@@ -14,6 +22,11 @@ import {
   SearchBundleSchema,
 } from "./schemas.js";
 import type { MedicationRequest, Observation, Patient } from "./types.js";
+
+const bySubject = (r: { subject: { reference: string } }) =>
+  r.subject.reference;
+const byPatient = (r: { patient: { reference: string } }) =>
+  r.patient.reference;
 
 export class FhirError extends Error {
   constructor(
@@ -29,6 +42,10 @@ export interface FhirClient {
   getPatient(patientId: string): Promise<Patient>;
   searchObservations(patientId: string, code: string): Promise<Observation[]>;
   getMedicationRequests(patientId: string): Promise<MedicationRequest[]>;
+  getConditions(patientId: string): Promise<Condition[]>;
+  getAllergies(patientId: string): Promise<AllergyIntolerance[]>;
+  getImmunizations(patientId: string): Promise<Immunization[]>;
+  getEncounters(patientId: string, since?: string): Promise<Encounter[]>;
 }
 
 export class HttpFhirClient implements FhirClient {
@@ -75,7 +92,13 @@ export class HttpFhirClient implements FhirClient {
     patientId: string,
     code: string,
   ): Promise<Observation[]> {
-    return this.search("Observation", ObservationSchema, patientId, { code });
+    return this.search(
+      "Observation",
+      ObservationSchema,
+      patientId,
+      { code },
+      bySubject,
+    );
   }
 
   async getMedicationRequests(patientId: string): Promise<MedicationRequest[]> {
@@ -84,17 +107,51 @@ export class HttpFhirClient implements FhirClient {
       MedicationRequestSchema,
       patientId,
       { status: "active" },
+      bySubject,
     );
     return resources.filter((resource) => resource.status === "active");
   }
 
-  private async search<
-    T extends { id: string; subject: { reference: string } },
-  >(
+  async getConditions(patientId: string): Promise<Condition[]> {
+    return this.search("Condition", ConditionSchema, patientId, {}, bySubject);
+  }
+
+  async getAllergies(patientId: string): Promise<AllergyIntolerance[]> {
+    return this.search(
+      "AllergyIntolerance",
+      AllergyIntoleranceSchema,
+      patientId,
+      {},
+      byPatient,
+    );
+  }
+
+  async getImmunizations(patientId: string): Promise<Immunization[]> {
+    return this.search(
+      "Immunization",
+      ImmunizationSchema,
+      patientId,
+      {},
+      byPatient,
+    );
+  }
+
+  async getEncounters(patientId: string, since?: string): Promise<Encounter[]> {
+    return this.search(
+      "Encounter",
+      EncounterSchema,
+      patientId,
+      since ? { date: `ge${since}` } : {},
+      bySubject,
+    );
+  }
+
+  private async search<T extends { id: string }>(
     resourceType: string,
     schema: z.ZodType<T>,
     patientId: string,
     params: Record<string, string>,
+    subjectOf: (resource: T) => string,
   ): Promise<T[]> {
     this.assertPatientId(patientId);
     let url = new URL(resourceType, this.base);
@@ -116,8 +173,8 @@ export class HttpFhirClient implements FhirClient {
         const resource = this.parse(schema, entry.resource);
         const expected = `Patient/${patientId}`;
         if (
-          resource.subject.reference !== expected &&
-          resource.subject.reference !== new URL(expected, this.base).href
+          subjectOf(resource) !== expected &&
+          subjectOf(resource) !== new URL(expected, this.base).href
         )
           throw new FhirError("Unexpected FHIR subject");
         if (ids.has(resource.id)) throw new FhirError("Repeated FHIR resource");

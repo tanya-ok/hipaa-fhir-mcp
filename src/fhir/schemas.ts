@@ -13,6 +13,7 @@ export const PatientIdSchema = z
     "FHIR logical id of the Patient, 1 to 64 letters, digits, dots or hyphens, for example a sandbox id returned by the FHIR server. Not a name, MRN or other identifier.",
   );
 const text = z.string().min(1).max(256);
+// Display and free text are dropped: they can carry patient-specific narrative.
 const coding = z.object({ system: text.optional(), code: text.optional() });
 const concept = z.object({ coding: z.array(coding).max(32).optional() });
 const reference = z.object({ reference: z.string().min(1).max(2048) });
@@ -83,6 +84,76 @@ export const MedicationRequestSchema = z.object({
   medicationReference: reference.optional(),
   authoredOn: text.optional(),
 });
+
+// Only the fields an agent needs are kept; zod drops everything else (minimum necessary).
+export const ConditionSchema = z.object({
+  resourceType: z.literal("Condition"),
+  id,
+  clinicalStatus: concept.optional(),
+  verificationStatus: concept.optional(),
+  code: concept.optional(),
+  subject: reference,
+  onsetDateTime: text.optional(),
+  abatementDateTime: text.optional(),
+  recordedDate: text.optional(),
+});
+
+export const AllergyIntoleranceSchema = z.object({
+  resourceType: z.literal("AllergyIntolerance"),
+  id,
+  clinicalStatus: concept.optional(),
+  verificationStatus: concept.optional(),
+  type: z.enum(["allergy", "intolerance"]).optional(),
+  category: z
+    .array(z.enum(["food", "medication", "environment", "biologic"]))
+    .max(4)
+    .optional(),
+  criticality: z.enum(["low", "high", "unable-to-assess"]).optional(),
+  code: concept.optional(),
+  patient: reference,
+  recordedDate: text.optional(),
+});
+
+export const ImmunizationSchema = z.object({
+  resourceType: z.literal("Immunization"),
+  id,
+  status: z.enum(["completed", "entered-in-error", "not-done"]),
+  vaccineCode: concept,
+  patient: reference,
+  occurrenceDateTime: text.optional(),
+});
+
+export const EncounterSchema = z.object({
+  resourceType: z.literal("Encounter"),
+  id,
+  status: z.enum([
+    "planned",
+    "arrived",
+    "triaged",
+    "in-progress",
+    "onleave",
+    "finished",
+    "cancelled",
+    "entered-in-error",
+    "unknown",
+  ]),
+  class: coding.optional(),
+  type: z.array(concept).max(8).optional(),
+  subject: reference,
+  period: z.object({ start: text.optional(), end: text.optional() }).optional(),
+});
+
+export type Condition = z.infer<typeof ConditionSchema>;
+export type AllergyIntolerance = z.infer<typeof AllergyIntoleranceSchema>;
+export type Immunization = z.infer<typeof ImmunizationSchema>;
+export type Encounter = z.infer<typeof EncounterSchema>;
+
+export const SinceDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "since must be YYYY-MM-DD" })
+  .describe(
+    "Optional start date, YYYY-MM-DD. Only encounters on or after this date are returned; use it when a patient has a long history.",
+  );
 
 export const MAX_RESULTS = 200;
 export const MAX_PAGES = 5;

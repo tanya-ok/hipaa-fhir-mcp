@@ -58,6 +58,22 @@ class StubFhirClient implements FhirClient {
     }
     throw new Error("getMedicationRequests not stubbed");
   }
+
+  getConditions(): Promise<never> {
+    throw new Error("getConditions not stubbed");
+  }
+
+  getAllergies(): Promise<never> {
+    throw new Error("getAllergies not stubbed");
+  }
+
+  getImmunizations(): Promise<never> {
+    throw new Error("getImmunizations not stubbed");
+  }
+
+  getEncounters(): Promise<never> {
+    throw new Error("getEncounters not stubbed");
+  }
 }
 
 describe("audit logger", () => {
