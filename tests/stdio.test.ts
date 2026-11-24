@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -22,6 +22,12 @@ writeFileSync(
   }),
 );
 afterAll(() => rmSync(policyDir, { recursive: true, force: true }));
+
+const { version } = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+) as {
+  version: string;
+};
 
 describe("actual stdio process", () => {
   it("audits accepted, rejected and failed calls exactly once without contaminating stdout", async () => {
@@ -52,7 +58,7 @@ describe("actual stdio process", () => {
     client.onerror = (error) => protocolErrors.push(error);
     try {
       await client.connect(transport);
-      expect(client.getServerVersion()?.version).toBe("0.4.0");
+      expect(client.getServerVersion()?.version).toBe(version);
       const listed = await client.listTools();
       expect(listed.tools).toHaveLength(3);
       expect(

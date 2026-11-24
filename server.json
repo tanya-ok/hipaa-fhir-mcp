@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.tanya-ok/hipaa-fhir-mcp",
+  "title": "HIPAA FHIR MCP (prototype)",
+  "description": "Prototype: three read-only FHIR R4 tools with HMAC audit. Synthetic data only, not for real PHI.",
+  "version": "0.4.0",
+  "repository": {
+    "url": "https://github.com/tanya-ok/hipaa-fhir-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://tanya-ok.github.io/hipaa-fhir-mcp/",
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/tanya-ok/hipaa-fhir-mcp/releases/download/v0.4.0/hipaa-fhir-mcp-0.4.0.mcpb",
+      "fileSha256": "3f04c2cb8424725e01353e912681aaef00d071f33803008871a55f6416c849ce",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "AUDIT_HMAC_KEY",
+          "description": "64 hex characters used to HMAC patient ids in audit records",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "FHIR_BASE_URL",
+          "description": "FHIR R4 base URL; defaults to the public synthetic SMART sandbox",
+          "default": "https://r4.smarthealthit.org"
+        },
+        {
+          "name": "CALLER_IDENTITY",
+          "description": "Operator label written into audit records, not an authenticated identity",
+          "default": "mcp-client-local"
+        },
+        {
+          "name": "AUDIT_LOG_FILE",
+          "description": "Optional absolute path for the audit file sink; stderr when empty"
+        }
+      ]
+    }
+  ]
+}
