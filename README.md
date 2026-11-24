@@ -1,16 +1,35 @@
+<div align="center">
+
 # hipaa-fhir-mcp
 
-A **prototype** of a HIPAA-oriented MCP server that lets an AI agent query medical data through the FHIR R4 API.
+**Read-only FHIR R4 tools for AI agents, with deny-by-default patient access and HMAC-hashed audit.**
 
-The goal is to show the intersection of four things that rarely appear in the same repository:
-- Model Context Protocol (MCP) tool server in TypeScript
-- HIPAA Technical Safeguards (§164.312)
-- AWS security patterns (IAM, VPC endpoints, KMS envelope encryption)
-- FHIR R4 with a SMART-on-FHIR OAuth 2.1 + PKCE upgrade path
-
-Documentation site: <https://tanya-ok.github.io/hipaa-fhir-mcp/>
+[![Release](https://img.shields.io/github/v/release/tanya-ok/hipaa-fhir-mcp?style=flat-square&color=0e7490)](https://github.com/tanya-ok/hipaa-fhir-mcp/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/tanya-ok/hipaa-fhir-mcp/ci.yml?branch=main&style=flat-square&label=CI&logo=github)](https://github.com/tanya-ok/hipaa-fhir-mcp/actions/workflows/ci.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/tanya-ok/hipaa-fhir-mcp/codeql.yml?branch=main&style=flat-square&label=CodeQL&logo=github)](https://github.com/tanya-ok/hipaa-fhir-mcp/actions/workflows/codeql.yml)
+[![License](https://img.shields.io/github/license/tanya-ok/hipaa-fhir-mcp?style=flat-square&color=2dd4bf)](LICENSE)
+<br/>
+[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.tanya--ok%2Fhipaa--fhir--mcp-6366f1?style=flat-square)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.tanya-ok/hipaa-fhir-mcp)
+[![Glama score](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp/badges/score.svg)](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp)
+[![FHIR R4](https://img.shields.io/badge/FHIR-R4-0ea5e9?style=flat-square)](https://hl7.org/fhir/R4/)
+[![SMART Backend Services](https://img.shields.io/badge/SMART-Backend%20Services-0ea5e9?style=flat-square)](https://hl7.org/fhir/smart-app-launch/STU2.2/backend-services.html)
+[![Node](https://img.shields.io/badge/node-%E2%89%A526-339933?style=flat-square&logo=node.js&logoColor=white)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.json)
 
 [![hipaa-fhir-mcp MCP server: quality and maintenance score on Glama](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp/badges/card.svg)](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp)
+
+**[Docs](https://tanya-ok.github.io/hipaa-fhir-mcp/)** · **[Install](#install-in-claude-desktop)** · **[Tools](#architecture)** · **[Patient access](#patient-access-policy)** · **[Releases](https://github.com/tanya-ok/hipaa-fhir-mcp/releases)** · **[Changelog](CHANGELOG.md)**
+
+</div>
+
+> **Prototype.** Synthetic data only, not for real PHI. Not tested against a real EHR yet.
+
+| What the agent gets | What stays in place |
+|---|---|
+| Patient summary, observations, medications, conditions, allergies, immunizations, encounters | Read only: no write path to patient data |
+| Codes, statuses and dates | Names, free text and notes are dropped before the model sees a record |
+| Fixed, safe error texts | Every call: one audit record, patient id HMAC-hashed |
+| Any FHIR R4 server, including SMART Backend Services | Deny by default: a grant per caller, patient and tool |
 
 ## Why this exists
 
