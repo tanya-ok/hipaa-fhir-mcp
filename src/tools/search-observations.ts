@@ -15,7 +15,10 @@ export const SearchObservationsInput = z.object({
     .regex(/^[\w\-.|,:%/]+$/, {
       message:
         "code must be a token search expression (e.g. http://loinc.org|8867-4)",
-    }),
+    })
+    .describe(
+      "FHIR token search for Observation.code: system|code (http://loinc.org|8867-4), a bare code (8867-4), or several separated by commas. Letters, digits and - . | , : % / only.",
+    ),
 });
 
 export type SearchObservationsInputType = z.infer<
