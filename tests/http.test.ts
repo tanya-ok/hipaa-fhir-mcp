@@ -17,6 +17,7 @@ import {
   loadTokens,
   RateLimiter,
 } from "../src/http.js";
+import { toolInputSchemas } from "../src/mcp.js";
 import { createPatientAuthorizer } from "../src/security/patient-policy.js";
 
 const TOKEN = "synthetic-token-0123456789abcdef";
@@ -143,7 +144,9 @@ describe("HTTP transport with bearer tokens", () => {
     const { base, fhir } = await start(bearer);
     const client = await connect(base, TOKEN);
     try {
-      expect((await client.listTools()).tools.length).toBe(8);
+      expect((await client.listTools()).tools.length).toBe(
+        Object.keys(toolInputSchemas).length,
+      );
       const ok = await client.callTool({
         name: "get_patient",
         arguments: { patient_id: PATIENT },

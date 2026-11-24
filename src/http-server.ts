@@ -48,7 +48,7 @@ function main(): void {
     demo &&
     (config.FHIR_BASE_URL.replace(/\/+$/, "") !== DEMO_FHIR_BASE ||
       config.FHIR_AUTH_TOKEN ||
-      process.env.SMART_CLIENT_ID)
+      config.SMART_CLIENT_ID)
   )
     fail(
       `MCP_DEMO=1 requires FHIR_BASE_URL=${DEMO_FHIR_BASE} and no backend credentials`,

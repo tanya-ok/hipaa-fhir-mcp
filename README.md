@@ -203,6 +203,22 @@ pnpm check:phi      # PHI shape sweep
 The file stores SHA-256 digests only; generate a token with `openssl rand -base64 32` and its digest with `printf %s "$TOKEN" | shasum -a 256`. `PATIENT_POLICY_FILE` is required in both modes.
 
 Other settings: `MCP_HTTP_HOST` (default `127.0.0.1`), `MCP_HTTP_PORT` (default `8080`), `MCP_ALLOWED_HOSTS` (comma-separated `Host` values; set it behind a public hostname), `MCP_RATE_LIMIT_PER_MINUTE` (default 60 per client address). Bodies over 64 KB, batches and methods other than POST are refused. Invalid tool calls are audited before rejection, as on stdio. Terminate TLS in front of the server.
+## Connect to an authenticated FHIR server
+
+For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-launch/STU2.2/backend-services.html), set:
+
+| Variable | Value |
+|---|---|
+| `FHIR_BASE_URL` | the server's FHIR base URL (required) |
+| `SMART_CLIENT_ID` | the client id the authorization server issued |
+| `SMART_KEY_ID` | the `kid` of the registered public key |
+| `SMART_PRIVATE_KEY_FILE` | PEM private key, RSA 2048+ (RS384) or EC P-384 (ES384), mode 600 |
+| `SMART_SCOPE` | optional; defaults to `system/<Resource>.rs` for the eight tools |
+| `SMART_TOKEN_URL` | optional; otherwise read from `.well-known/smart-configuration` |
+
+The server signs a short-lived client assertion (5 minutes, unique `jti`), exchanges it for an access token, caches the token until a minute before expiry and gets a new one once after a 401. Token endpoint responses and errors are never logged or returned to the agent. The token is sent only to the FHIR base origin. A static `FHIR_AUTH_TOKEN` remains available; the two cannot be combined.
+
+The token flow was exercised against the public SMART bulk-data reference server. Real EHR sandboxes (Epic, Oracle Health, Medplum) were not tested yet.
 
 ## Patient access policy
 

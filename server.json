@@ -35,6 +35,18 @@
           "default": "mcp-client-local"
         },
         {
+          "name": "SMART_CLIENT_ID",
+          "description": "SMART Backend Services client id; set with SMART_KEY_ID and SMART_PRIVATE_KEY_FILE"
+        },
+        {
+          "name": "SMART_KEY_ID",
+          "description": "kid of the registered public key"
+        },
+        {
+          "name": "SMART_PRIVATE_KEY_FILE",
+          "description": "Absolute path to a PEM private key, RSA 2048+ or EC P-384, mode 600"
+        },
+        {
           "name": "PATIENT_POLICY_FILE",
           "description": "Absolute path to the JSON patient policy (principal, patients, tools); every tool call is denied when empty"
         },
