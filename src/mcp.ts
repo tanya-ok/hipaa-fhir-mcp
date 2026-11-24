@@ -10,6 +10,8 @@ import {
 } from "./tools/get-medication-list.js";
 import { GetPatientInput, getPatient } from "./tools/get-patient.js";
 import {
+  FindPatientInput,
+  findPatient,
   GetEncountersInput,
   getAllergies,
   getConditions,
@@ -62,6 +64,7 @@ export const toolInputSchemas = {
   get_immunizations: PatientRecordInput,
   get_encounters: GetEncountersInput,
   get_patient_summary: PatientRecordInput,
+  find_patient: FindPatientInput,
 };
 
 /**
@@ -270,6 +273,29 @@ export function createFhirMcpServer(
     async (input) => {
       try {
         return toTextResult(await getPatientSummary(input, requestDeps()));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "find_patient",
+    {
+      title: "Find Patient by Identifier",
+      description:
+        'Find patients by identifier (MRN, member id or another system|value) and return their FHIR ids, gender, birth date and active status. Use it when you know an identifier but not the FHIR id, then pass the id to the other tools. Only patients the caller is granted for find_patient are returned; others are silently left out, so an empty list does not mean no such patient exists. Read only. Every call writes one audit record; the identifier and patient ids are not logged. A caller without a find_patient grant gets "Patient access not authorized" before any FHIR request. More than 200 matches returns "Too many results (more than 200); narrow the request". Other failures return "FHIR request failed" with no server detail.',
+      inputSchema: FindPatientInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      try {
+        return toTextResult(await findPatient(input, requestDeps()));
       } catch (err) {
         return toErrorResult(err);
       }

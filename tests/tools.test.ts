@@ -74,6 +74,10 @@ class StubFhirClient implements FhirClient {
   getEncounters(): Promise<never> {
     throw new Error("getEncounters not stubbed");
   }
+
+  findPatients(): Promise<never> {
+    throw new Error("findPatients not stubbed");
+  }
 }
 
 describe("audit logger", () => {
@@ -221,7 +225,7 @@ describe("tools", () => {
       config,
       fhir: client,
       audit,
-      authorizer: { authorize: () => true },
+      authorizer: { authorize: () => true, allowsTool: () => true },
       context: requestContext("synthetic-tester", "local-synthetic"),
     };
   }

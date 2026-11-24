@@ -12,7 +12,8 @@
         "get_allergies",
         "get_immunizations",
         "get_encounters",
-        "get_patient_summary"
+        "get_patient_summary",
+        "find_patient"
       ]
     }
   ]

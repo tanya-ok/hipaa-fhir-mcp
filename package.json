@@ -34,7 +34,7 @@
     "start": "node dist/server.js",
     "dev": "node --env-file-if-exists=.env --import tsx src/server.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "audit": "pnpm audit --audit-level moderate",
     "check:phi": "node scripts/check-phi.mjs",
     "lint": "biome lint .",

@@ -46,6 +46,7 @@ export interface FhirClient {
   getAllergies(patientId: string): Promise<AllergyIntolerance[]>;
   getImmunizations(patientId: string): Promise<Immunization[]>;
   getEncounters(patientId: string, since?: string): Promise<Encounter[]>;
+  findPatients(identifier: string): Promise<Patient[]>;
 }
 
 export class HttpFhirClient implements FhirClient {
@@ -136,6 +137,11 @@ export class HttpFhirClient implements FhirClient {
     );
   }
 
+  /** Identifier search; the caller filters the matches by its own grant. */
+  async findPatients(identifier: string): Promise<Patient[]> {
+    return this.search("Patient", PatientSchema, null, { identifier }, null);
+  }
+
   async getEncounters(patientId: string, since?: string): Promise<Encounter[]> {
     return this.search(
       "Encounter",
@@ -149,14 +155,14 @@ export class HttpFhirClient implements FhirClient {
   private async search<T extends { id: string }>(
     resourceType: string,
     schema: z.ZodType<T>,
-    patientId: string,
+    patientId: string | null,
     params: Record<string, string>,
-    subjectOf: (resource: T) => string,
+    subjectOf: ((resource: T) => string) | null,
   ): Promise<T[]> {
-    this.assertPatientId(patientId);
+    if (patientId !== null) this.assertPatientId(patientId);
     let url = new URL(resourceType, this.base);
     url.search = new URLSearchParams({
-      patient: patientId,
+      ...(patientId !== null ? { patient: patientId } : {}),
       _count: String(PAGE_SIZE),
       ...params,
     }).toString();
@@ -171,12 +177,14 @@ export class HttpFhirClient implements FhirClient {
         throw new FhirError("FHIR result limit exceeded");
       for (const entry of bundle.entry) {
         const resource = this.parse(schema, entry.resource);
-        const expected = `Patient/${patientId}`;
-        if (
-          subjectOf(resource) !== expected &&
-          subjectOf(resource) !== new URL(expected, this.base).href
-        )
-          throw new FhirError("Unexpected FHIR subject");
+        if (patientId !== null && subjectOf !== null) {
+          const expected = `Patient/${patientId}`;
+          if (
+            subjectOf(resource) !== expected &&
+            subjectOf(resource) !== new URL(expected, this.base).href
+          )
+            throw new FhirError("Unexpected FHIR subject");
+        }
         if (ids.has(resource.id)) throw new FhirError("Repeated FHIR resource");
         ids.add(resource.id);
         results.push(resource);
