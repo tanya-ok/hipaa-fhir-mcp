@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- build stage -----------------------------------------------------------
-FROM node:26-alpine AS build
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS build
 
 # Build needs dev dependencies (TypeScript, vitest) so NODE_ENV is explicit
 # here; some tools (npm, pnpm, third-party post-installs) read it to decide
@@ -30,7 +30,7 @@ RUN pnpm prune --prod
 
 
 # ---- runtime stage ---------------------------------------------------------
-FROM node:26-alpine AS runtime
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS runtime
 
 # Production defaults. The audit logger (src/audit/logger.ts) writes to stderr
 # unless AUDIT_LOG_FILE is set, so a log collector or sidecar can pick it up.
@@ -48,4 +48,6 @@ USER node
 
 # MCP transport is stdio. No port to expose. The container is intended to be
 # launched by an MCP host that pipes JSON-RPC over stdin/stdout.
-ENTRYPOINT ["node", "dist/server.js"]
+# stdio by default; run "dist/http-server.js" as the command for Streamable HTTP.
+ENTRYPOINT ["node"]
+CMD ["dist/server.js"]
