@@ -38,6 +38,30 @@ The [development plan](docs/development-plan.md) records the 2026-10-04 review, 
 
 The prototype deliberately does not ship with fake production posture. Treating it as compliant out of the box would itself be non-compliant.
 
+## Claims and the tests that pin them
+
+Every security claim in this README has a test that fails if the claim stops being true. CI runs all of them on every pull request.
+
+| Claim | Test that fails if it stops being true |
+|---|---|
+| No tool runs for a patient outside the caller's grant, and the FHIR server is not called | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "denies another patient before dispatch with one audit record" |
+| Without a policy, every call is denied | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "denies everything without a policy"; [`stdio.test.ts`](tests/stdio.test.ts) "denies every tool call when no policy or principal is configured" |
+| Identity or grants in tool arguments are ignored | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "ignores identity and grant claims in tool arguments and metadata" |
+| Every call writes exactly one audit record, with the patient id HMAC-hashed and no PHI | [`stdio.test.ts`](tests/stdio.test.ts) "audits accepted, rejected and failed calls exactly once without contaminating stdout"; [`tools.test.ts`](tests/tools.test.ts) "writes one line per record with HMAC patient id and no PHI" |
+| Audit records name the key that hashed them, so a key can be rotated | [`tools.test.ts`](tests/tools.test.ts) "labels records with a stable key id that differs per key" |
+| Names, free text and notes never reach the model | [`client.test.ts`](tests/client.test.ts) "follows bounded same-base pagination and strips nested free text"; [`patient-records.test.ts`](tests/patient-records.test.ts) "checks AllergyIntolerance.patient and drops free text" |
+| A resource for another patient fails the call | [`patient-records.test.ts`](tests/patient-records.test.ts) "refuses an Immunization for another patient" |
+| Upstream error text never reaches the agent | [`client.test.ts`](tests/client.test.ts) "discards upstream error text and response body" |
+| Results are bounded; an over-limit search fails instead of truncating | [`client.test.ts`](tests/client.test.ts) "bounds aggregate results even when each page is within its limit" |
+| Pagination never follows a link off the configured FHIR base | [`client.test.ts`](tests/client.test.ts) "accepts a same-base root continuation used by paging servers" and the pagination destination checks in the same file |
+
+## Where it falls short
+
+- **Synthetic data only.** Not tested against a real EHR yet; not for real PHI. Using real PHI needs your own HIPAA program, BAAs with your hosting and model providers, and an independent review this project has not had.
+- **Read only.** No writes, by design.
+- **The patient policy is a local file.** It is not SMART patient-level authorization or consent management.
+- **One maintainer.** Issues and reviews are welcome; see [CONTRIBUTING](CONTRIBUTING.md).
+
 ## Architecture
 
 ```

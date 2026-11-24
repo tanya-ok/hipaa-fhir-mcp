@@ -10,6 +10,11 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ### Added
 
+- Audit records carry `key_id`, a one-way label of the HMAC key, so records stay attributable after the key is rotated.
+- README: a table mapping each security claim to the test that pins it, and a "Where it falls short" section.
+
+### Added
+
 - Five read-only tools: `get_patient_summary` (patient, active conditions, allergies and active medications in one call), `get_conditions`, `get_allergies`, `get_immunizations` and `get_encounters` with an optional `since` date. Each needs its own grant in the patient policy and writes one audit record.
 - An over-limit search now returns "Too many results (more than 200); narrow the request" instead of the generic failure text.
 

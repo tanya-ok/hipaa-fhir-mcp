@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { appendFile } from "node:fs/promises";
 import type { Config } from "../config.js";
 
@@ -8,6 +8,8 @@ export interface AuditRecord {
   timestamp: string;
   tool: string;
   patient_id_hmac: string;
+  /** Which HMAC key produced the digest, so records stay attributable across key rotation. */
+  key_id: string;
   caller_identity: string;
   request_id: string;
   status: AuditStatus;
@@ -24,7 +26,17 @@ export interface AuditInput {
 }
 
 export class AuditLogger {
-  constructor(private readonly config: Config) {}
+  /** A one-way label of the key; the key itself cannot be derived from it. */
+  readonly keyId: string;
+
+  constructor(private readonly config: Config) {
+    this.keyId = createHash("sha256")
+      .update(
+        `hipaa-fhir-mcp audit key id:${config.AUDIT_HMAC_KEY.toLowerCase()}`,
+      )
+      .digest("hex")
+      .slice(0, 16);
+  }
 
   /**
    * Compute the keyed HMAC of a patient id. The plaintext id is never
@@ -44,6 +56,7 @@ export class AuditLogger {
       timestamp: new Date().toISOString(),
       ...rest,
       patient_id_hmac: this.hmac(patient_id),
+      key_id: this.keyId,
     };
     const line = `${JSON.stringify(record)}\n`;
 
