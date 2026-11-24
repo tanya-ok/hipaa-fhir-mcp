@@ -10,7 +10,7 @@ The goal is to show the intersection of four things that rarely appear in the sa
 
 Documentation site: <https://tanya-ok.github.io/hipaa-fhir-mcp/>
 
-[![hipaa-fhir-mcp on Glama](https://glama.ai/mcp/servers/@tanya-ok/hipaa-fhir-mcp/badge)](https://glama.ai/mcp/servers/@tanya-ok/hipaa-fhir-mcp)
+[![hipaa-fhir-mcp MCP server: quality and maintenance score on Glama](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp/badges/card.svg)](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp)
 
 ## Why this exists
 
