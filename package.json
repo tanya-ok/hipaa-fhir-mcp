@@ -1,6 +1,6 @@
 {
   "name": "hipaa-fhir-mcp",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "HIPAA-oriented MCP server exposing FHIR R4 tools to AI agents",
   "license": "MIT",
   "author": "Tanya Babitskaya",

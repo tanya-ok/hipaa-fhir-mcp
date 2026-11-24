@@ -35,6 +35,14 @@
           "default": "mcp-client-local"
         },
         {
+          "name": "PATIENT_POLICY_FILE",
+          "description": "Absolute path to the JSON patient policy (principal, patients, tools); every tool call is denied when empty"
+        },
+        {
+          "name": "LOCAL_SYNTHETIC_PRINCIPAL",
+          "description": "Local fixture identity matched against the policy, not an authenticated caller; every tool call is denied when empty"
+        },
+        {
           "name": "AUDIT_LOG_FILE",
           "description": "Optional absolute path for the audit file sink; stderr when empty"
         }

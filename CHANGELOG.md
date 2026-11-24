@@ -8,6 +8,18 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-24
+
+### Added
+
+- MCP tool annotations (read only, not destructive, idempotent, open world) and parameter descriptions; each tool description now states when to use it, its result limit, the patient access check and the fixed error texts.
+- `PATIENT_POLICY_FILE` and `LOCAL_SYNTHETIC_PRINCIPAL` in `server.json`, so MCP Registry clients see the patient policy settings.
+- A CI job that builds the container image and lists the tools over stdio inside it.
+
+### Fixed
+
+- The container build copies `pnpm-workspace.yaml`, so the frozen install accepts the lockfile overrides.
+
 ### Security
 
 - **Breaking:** per-patient authorization before any FHIR request. Tools deny by default until `PATIENT_POLICY_FILE` and, for stdio, `LOCAL_SYNTHETIC_PRINCIPAL` are set; `createFhirMcpServer` now takes an authorizer and a request context provider. An invalid policy stops startup. This is a local policy, not SMART authorization.
@@ -148,6 +160,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
+[0.6.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/releases/tag/v0.3.0
