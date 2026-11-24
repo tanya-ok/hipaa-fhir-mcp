@@ -203,6 +203,22 @@ cosign verify ghcr.io/tanya-ok/hipaa-fhir-mcp:latest \
 ```
 
 The default command runs the stdio server; pass `dist/http-server.js` as the command for Streamable HTTP. The image runs as the non-root `node` user and has no shell entry point beyond `node`.
+## Connect to an authenticated FHIR server
+
+For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-launch/STU2.2/backend-services.html), set:
+
+| Variable | Value |
+|---|---|
+| `FHIR_BASE_URL` | the server's FHIR base URL (required) |
+| `SMART_CLIENT_ID` | the client id the authorization server issued |
+| `SMART_KEY_ID` | the `kid` of the registered public key |
+| `SMART_PRIVATE_KEY_FILE` | PEM private key, RSA 2048+ (RS384) or EC P-384 (ES384), mode 600 |
+| `SMART_SCOPE` | optional; defaults to `system/<Resource>.rs` for the eight tools |
+| `SMART_TOKEN_URL` | optional; otherwise read from `.well-known/smart-configuration` |
+
+The server signs a short-lived client assertion (5 minutes, unique `jti`), exchanges it for an access token, caches the token until a minute before expiry and gets a new one once after a 401. Token endpoint responses and errors are never logged or returned to the agent. The token is sent only to the FHIR base origin. A static `FHIR_AUTH_TOKEN` remains available; the two cannot be combined.
+
+The token flow was exercised against the public SMART bulk-data reference server. Real EHR sandboxes (Epic, Oracle Health, Medplum) were not tested yet.
 
 ## Patient access policy
 
