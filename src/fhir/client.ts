@@ -3,6 +3,14 @@ import axios, { type AxiosInstance } from "axios";
 import type { z } from "zod";
 import type { Config } from "../config.js";
 import {
+  loadPrivateKey,
+  SmartAuthError,
+  SmartBackendTokens,
+  StaticToken,
+  safeHttpsUrl,
+  type TokenSource,
+} from "../security/smart-backend.js";
+import {
   type AllergyIntolerance,
   AllergyIntoleranceSchema,
   type Condition,
@@ -22,6 +30,27 @@ import {
   SearchBundleSchema,
 } from "./schemas.js";
 import type { MedicationRequest, Observation, Patient } from "./types.js";
+
+function tokenSourceFrom(config: Config, base: URL): TokenSource | undefined {
+  if (config.FHIR_AUTH_TOKEN) return new StaticToken(config.FHIR_AUTH_TOKEN);
+  if (
+    !config.SMART_CLIENT_ID ||
+    !config.SMART_KEY_ID ||
+    !config.SMART_PRIVATE_KEY_FILE
+  )
+    return undefined;
+  return new SmartBackendTokens({
+    fhirBase: base,
+    clientId: config.SMART_CLIENT_ID,
+    keyId: config.SMART_KEY_ID,
+    privateKey: loadPrivateKey(config.SMART_PRIVATE_KEY_FILE),
+    scope: config.SMART_SCOPE,
+    tokenUrl: config.SMART_TOKEN_URL
+      ? safeHttpsUrl(config.SMART_TOKEN_URL)
+      : undefined,
+    timeoutMs: config.REQUEST_TIMEOUT_MS,
+  });
+}
 
 const bySubject = (r: { subject: { reference: string } }) =>
   r.subject.reference;
@@ -53,7 +82,9 @@ export class HttpFhirClient implements FhirClient {
   private readonly http: AxiosInstance;
   private readonly base: URL;
 
-  constructor(config: Config) {
+  private readonly tokens?: TokenSource;
+
+  constructor(config: Config, tokens?: TokenSource) {
     this.base = new URL(`${config.FHIR_BASE_URL.replace(/\/+$/, "")}/`);
     if (
       this.base.protocol !== "https:" ||
@@ -67,8 +98,7 @@ export class HttpFhirClient implements FhirClient {
       Accept: "application/fhir+json",
       Prefer: "handling=strict",
     };
-    if (config.FHIR_AUTH_TOKEN)
-      headers.Authorization = `Bearer ${config.FHIR_AUTH_TOKEN}`;
+    this.tokens = tokens ?? tokenSourceFrom(config, this.base);
     this.http = axios.create({
       timeout: config.REQUEST_TIMEOUT_MS,
       headers,
@@ -229,16 +259,26 @@ export class HttpFhirClient implements FhirClient {
     return result.data;
   }
 
-  private async request(url: URL): Promise<unknown> {
+  private async request(url: URL, retried = false): Promise<unknown> {
+    let status: number | undefined;
     try {
+      const token = this.tokens ? await this.tokens.token() : undefined;
       const response = await this.http.request<unknown>({
         method: "GET",
         url: url.href,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       return response.data;
     } catch (err) {
-      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
-      throw new FhirError("FHIR request failed", status);
+      if (err instanceof SmartAuthError)
+        throw new FhirError("FHIR authorization failed");
+      status = axios.isAxiosError(err) ? err.response?.status : undefined;
     }
+    // An expired or revoked token gets one fresh token and one retry.
+    if (status === 401 && this.tokens && !retried) {
+      this.tokens.invalidate();
+      return this.request(url, true);
+    }
+    throw new FhirError("FHIR request failed", status);
   }
 }

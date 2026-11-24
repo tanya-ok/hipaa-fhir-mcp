@@ -22,7 +22,8 @@
   "type": "module",
   "main": "dist/server.js",
   "bin": {
-    "hipaa-fhir-mcp": "dist/server.js"
+    "hipaa-fhir-mcp": "dist/server.js",
+    "hipaa-fhir-mcp-http": "dist/http-server.js"
   },
   "files": [
     "dist",
@@ -42,7 +43,8 @@
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "package:mcpb": "node scripts/package-mcpb.mjs",
-    "check:mcpb": "python3 scripts/test-mcpb.py"
+    "check:mcpb": "python3 scripts/test-mcpb.py",
+    "start:http": "node dist/http-server.js"
   },
   "packageManager": "pnpm@12.14.0",
   "dependencies": {

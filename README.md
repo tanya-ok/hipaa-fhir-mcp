@@ -1,16 +1,35 @@
+<div align="center">
+
 # hipaa-fhir-mcp
 
-A **prototype** of a HIPAA-oriented MCP server that lets an AI agent query medical data through the FHIR R4 API.
+**Read-only FHIR R4 tools for AI agents, with deny-by-default patient access and HMAC-hashed audit.**
 
-The goal is to show the intersection of four things that rarely appear in the same repository:
-- Model Context Protocol (MCP) tool server in TypeScript
-- HIPAA Technical Safeguards (§164.312)
-- AWS security patterns (IAM, VPC endpoints, KMS envelope encryption)
-- FHIR R4 with a SMART-on-FHIR OAuth 2.1 + PKCE upgrade path
-
-Documentation site: <https://tanya-ok.github.io/hipaa-fhir-mcp/>
+[![Release](https://img.shields.io/github/v/release/tanya-ok/hipaa-fhir-mcp?style=flat-square&color=0e7490)](https://github.com/tanya-ok/hipaa-fhir-mcp/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/tanya-ok/hipaa-fhir-mcp/ci.yml?branch=main&style=flat-square&label=CI&logo=github)](https://github.com/tanya-ok/hipaa-fhir-mcp/actions/workflows/ci.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/tanya-ok/hipaa-fhir-mcp/codeql.yml?branch=main&style=flat-square&label=CodeQL&logo=github)](https://github.com/tanya-ok/hipaa-fhir-mcp/actions/workflows/codeql.yml)
+[![License](https://img.shields.io/github/license/tanya-ok/hipaa-fhir-mcp?style=flat-square&color=2dd4bf)](LICENSE)
+<br/>
+[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.tanya--ok%2Fhipaa--fhir--mcp-6366f1?style=flat-square)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.tanya-ok/hipaa-fhir-mcp)
+[![Glama score](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp/badges/score.svg)](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp)
+[![FHIR R4](https://img.shields.io/badge/FHIR-R4-0ea5e9?style=flat-square)](https://hl7.org/fhir/R4/)
+[![SMART Backend Services](https://img.shields.io/badge/SMART-Backend%20Services-0ea5e9?style=flat-square)](https://hl7.org/fhir/smart-app-launch/STU2.2/backend-services.html)
+[![Node](https://img.shields.io/badge/node-%E2%89%A526-339933?style=flat-square&logo=node.js&logoColor=white)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.json)
 
 [![hipaa-fhir-mcp MCP server: quality and maintenance score on Glama](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp/badges/card.svg)](https://glama.ai/mcp/servers/tanya-ok/hipaa-fhir-mcp)
+
+**[Docs](https://tanya-ok.github.io/hipaa-fhir-mcp/)** · **[Install](#install-in-claude-desktop)** · **[Tools](#architecture)** · **[Patient access](#patient-access-policy)** · **[Releases](https://github.com/tanya-ok/hipaa-fhir-mcp/releases)** · **[Changelog](CHANGELOG.md)**
+
+</div>
+
+> **Prototype.** Synthetic data only, not for real PHI. Not tested against a real EHR yet.
+
+| What the agent gets | What stays in place |
+|---|---|
+| Patient summary, observations, medications, conditions, allergies, immunizations, encounters | Read only: no write path to patient data |
+| Codes, statuses and dates | Names, free text and notes are dropped before the model sees a record |
+| Fixed, safe error texts | Every call: one audit record, patient id HMAC-hashed |
+| Any FHIR R4 server, including SMART Backend Services | Deny by default: a grant per caller, patient and tool |
 
 ## Why this exists
 
@@ -190,6 +209,35 @@ pnpm check          # Biome lint + format check
 pnpm check:fix      # apply Biome fixes
 pnpm check:phi      # PHI shape sweep
 ```
+
+## Run over HTTP
+
+`hipaa-fhir-mcp-http` serves MCP over Streamable HTTP (stateless) at `POST /mcp`, with `GET /healthz` for health checks. It refuses to start unless exactly one of these is set:
+
+| Mode | Setting | Who can call |
+|---|---|---|
+| Bearer tokens | `MCP_HTTP_TOKENS_FILE` (mode 600): `{"version":1,"tokens":[{"principal":"...","sha256":"<hex>"}]}` | A caller whose token hashes to a listed digest acts as that principal in the patient policy |
+| Public demo | `MCP_DEMO=1` | Anyone, as principal `public-demo`; only with `FHIR_BASE_URL=https://r4.smarthealthit.org` and no backend credentials |
+
+The file stores SHA-256 digests only; generate a token with `openssl rand -base64 32` and its digest with `printf %s "$TOKEN" | shasum -a 256`. `PATIENT_POLICY_FILE` is required in both modes.
+
+Other settings: `MCP_HTTP_HOST` (default `127.0.0.1`), `MCP_HTTP_PORT` (default `8080`), `MCP_ALLOWED_HOSTS` (comma-separated `Host` values; set it behind a public hostname), `MCP_RATE_LIMIT_PER_MINUTE` (default 60 per client address). Bodies over 64 KB, batches and methods other than POST are refused. Invalid tool calls are audited before rejection, as on stdio. Terminate TLS in front of the server.
+## Connect to an authenticated FHIR server
+
+For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-launch/STU2.2/backend-services.html), set:
+
+| Variable | Value |
+|---|---|
+| `FHIR_BASE_URL` | the server's FHIR base URL (required) |
+| `SMART_CLIENT_ID` | the client id the authorization server issued |
+| `SMART_KEY_ID` | the `kid` of the registered public key |
+| `SMART_PRIVATE_KEY_FILE` | PEM private key, RSA 2048+ (RS384) or EC P-384 (ES384), mode 600 |
+| `SMART_SCOPE` | optional; defaults to `system/<Resource>.rs` for the eight tools |
+| `SMART_TOKEN_URL` | optional; otherwise read from `.well-known/smart-configuration` |
+
+The server signs a short-lived client assertion (5 minutes, unique `jti`), exchanges it for an access token, caches the token until a minute before expiry and gets a new one once after a 401. Token endpoint responses and errors are never logged or returned to the agent. The token is sent only to the FHIR base origin. A static `FHIR_AUTH_TOKEN` remains available; the two cannot be combined.
+
+The token flow was exercised against the public SMART bulk-data reference server. Real EHR sandboxes (Epic, Oracle Health, Medplum) were not tested yet.
 
 ## Patient access policy
 
