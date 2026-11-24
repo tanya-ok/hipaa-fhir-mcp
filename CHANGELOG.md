@@ -8,6 +8,10 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Security
+
+- **Breaking:** per-patient authorization before any FHIR request. Tools deny by default until `PATIENT_POLICY_FILE` and, for stdio, `LOCAL_SYNTHETIC_PRINCIPAL` are set; `createFhirMcpServer` now takes an authorizer and a request context provider. An invalid policy stops startup. This is a local policy, not SMART authorization.
+
 ## [0.5.0] - 2026-11-24
 
 ### Added

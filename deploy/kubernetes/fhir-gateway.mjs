@@ -8,6 +8,8 @@ import {
 import { AuditLogger } from "/fhir/dist/audit/logger.js";
 import { ConfigSchema } from "/fhir/dist/config.js";
 import { createFhirMcpServer, toolInputSchemas } from "/fhir/dist/mcp.js";
+import { NO_CONTEXT, requestContext } from "/fhir/dist/security/context.js";
+import { createPatientAuthorizer } from "/fhir/dist/security/patient-policy.js";
 import { Client } from "/fhir/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
 import { InMemoryTransport } from "/fhir/node_modules/@modelcontextprotocol/sdk/dist/esm/inMemory.js";
 import { StreamableHTTPServerTransport } from "/fhir/node_modules/@modelcontextprotocol/sdk/dist/esm/server/streamableHttp.js";
@@ -28,6 +30,17 @@ const config = ConfigSchema.parse({
   NODE_ENV: "production",
 });
 const audit = new AuditLogger(config);
+// Synthetic grant for the lab caller; any other principal or patient is refused.
+const authorizer = createPatientAuthorizer({
+  version: 1,
+  grants: [
+    {
+      principal: research,
+      patients: ["synthetic-patient-1"],
+      tools: ["get_patient", "search_observations", "get_medication_list"],
+    },
+  ],
+});
 // Explicit offline fixture, never an implementation of the production FHIR adapter.
 const fixture = {
   async getPatient(id) {
@@ -103,7 +116,10 @@ const toolScopes = {
   get_medication_list: "fhir:read",
 };
 async function checkRegisteredScopes() {
-  const server = createFhirMcpServer({ config, audit, fhir: fixture });
+  const server = createFhirMcpServer(
+    { config, audit, fhir: fixture, authorizer },
+    () => NO_CONTEXT,
+  );
   const client = new Client({ name: "scope-check", version: "1" });
   const [clientTransport, serverTransport] =
     InMemoryTransport.createLinkedPair();
@@ -238,12 +254,16 @@ bridge.setAuthorizedHandler(async (req, res, identity) => {
     return;
   }
   await bridge.fetcher.getX509Svid();
-  const server = createFhirMcpServer({ config, audit, fhir: fixture }, () => {
-    const caller = getCallerIdentity();
-    if (!caller || caller.spiffeId.full !== identity.spiffeId.full)
-      throw new Error("caller_unavailable");
-    return caller.spiffeId.full;
-  });
+  // The token subject was already checked against this mTLS peer.
+  const server = createFhirMcpServer(
+    { config, audit, fhir: fixture, authorizer },
+    () => {
+      const caller = getCallerIdentity();
+      if (!caller || caller.spiffeId.full !== identity.spiffeId.full)
+        throw new Error("caller_unavailable");
+      return requestContext(caller.spiffeId.full, "spiffe-mtls+token");
+    },
+  );
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,

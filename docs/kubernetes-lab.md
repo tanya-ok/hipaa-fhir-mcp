@@ -102,3 +102,5 @@ builds. No Docker or Podman daemon is required. The shared lab owns lifecycle an
 scoped teardown. `Dockerfile`, `docker.io` image locations and Dependabot's
 `docker` ecosystem describe OCI image builds and dependency updates; they do not
 require the Docker runtime.
+
+The gateway passes the verified SPIFFE peer to the tools as the request context and holds one synthetic patient grant, `synthetic-patient-1`. Any other principal or patient is refused before the fixture is called.
