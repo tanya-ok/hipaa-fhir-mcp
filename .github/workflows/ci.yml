@@ -84,4 +84,5 @@ jobs:
                 -e FHIR_BASE_URL=https://r4.smarthealthit.org \
                 -e AUDIT_HMAC_KEY="$key" \
                 hipaa-fhir-mcp:ci > "$RUNNER_TEMP/tools.jsonl"
-          jq -se '[.[] | select(.id == 2) | .result.tools[].name] | sort == ["get_medication_list","get_patient","search_observations"]' "$RUNNER_TEMP/tools.jsonl"
+          want="$(jq -c '[.tools[].name] | sort' manifest.json)"
+          jq -se --argjson want "$want" '[.[] | select(.id == 2) | .result.tools[].name] | sort == $want' "$RUNNER_TEMP/tools.jsonl"

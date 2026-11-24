@@ -8,6 +8,11 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Added
+
+- Five read-only tools: `get_patient_summary` (patient, active conditions, allergies and active medications in one call), `get_conditions`, `get_allergies`, `get_immunizations` and `get_encounters` with an optional `since` date. Each needs its own grant in the patient policy and writes one audit record.
+- An over-limit search now returns "Too many results (more than 200); narrow the request" instead of the generic failure text.
+
 ## [0.6.0] - 2026-11-24
 
 ### Added

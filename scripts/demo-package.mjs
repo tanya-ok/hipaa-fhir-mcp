@@ -158,7 +158,7 @@ try {
   child.stdin.write(
     `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`,
   );
-  assert.equal((await rpc("tools/list", {})).result.tools.length, 3);
+  assert.equal((await rpc("tools/list", {})).result.tools.length, 8);
   async function call(name, args) {
     calls++;
     return rpc("tools/call", { name, arguments: args });
