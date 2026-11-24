@@ -11,6 +11,7 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 ### Added
 
 - Release workflow `image.yml`: multi-arch image on GHCR with SBOM and provenance attestations, keyless cosign signature, and a tools smoke test on the pushed digest.
+- `hipaa-fhir-mcp-http`: Streamable HTTP transport (stateless) with SHA-256-hashed bearer tokens mapped to policy principals, or a public demo mode pinned to the synthetic SMART sandbox; health endpoint, per-address rate limit, 64 KB body limit, optional Host pinning, and audited rejection of invalid tool calls.
 - Five read-only tools: `get_patient_summary` (patient, active conditions, allergies and active medications in one call), `get_conditions`, `get_allergies`, `get_immunizations` and `get_encounters` with an optional `since` date. Each needs its own grant in the patient policy and writes one audit record.
 - SMART Backend Services client authentication: `client_credentials` with a `private_key_jwt` assertion (RS384 or ES384), token endpoint discovery, token caching, and one retry with a new token after a 401. Configured with `SMART_CLIENT_ID`, `SMART_KEY_ID` and `SMART_PRIVATE_KEY_FILE`; the key file must not be readable by group or others.
 - An over-limit search now returns "Too many results (more than 200); narrow the request" instead of the generic failure text.

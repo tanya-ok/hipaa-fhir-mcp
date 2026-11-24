@@ -203,6 +203,18 @@ cosign verify ghcr.io/tanya-ok/hipaa-fhir-mcp:latest \
 ```
 
 The default command runs the stdio server; pass `dist/http-server.js` as the command for Streamable HTTP. The image runs as the non-root `node` user and has no shell entry point beyond `node`.
+## Run over HTTP
+
+`hipaa-fhir-mcp-http` serves MCP over Streamable HTTP (stateless) at `POST /mcp`, with `GET /healthz` for health checks. It refuses to start unless exactly one of these is set:
+
+| Mode | Setting | Who can call |
+|---|---|---|
+| Bearer tokens | `MCP_HTTP_TOKENS_FILE` (mode 600): `{"version":1,"tokens":[{"principal":"...","sha256":"<hex>"}]}` | A caller whose token hashes to a listed digest acts as that principal in the patient policy |
+| Public demo | `MCP_DEMO=1` | Anyone, as principal `public-demo`; only with `FHIR_BASE_URL=https://r4.smarthealthit.org` and no backend credentials |
+
+The file stores SHA-256 digests only; generate a token with `openssl rand -base64 32` and its digest with `printf %s "$TOKEN" | shasum -a 256`. `PATIENT_POLICY_FILE` is required in both modes.
+
+Other settings: `MCP_HTTP_HOST` (default `127.0.0.1`), `MCP_HTTP_PORT` (default `8080`), `MCP_ALLOWED_HOSTS` (comma-separated `Host` values; set it behind a public hostname), `MCP_RATE_LIMIT_PER_MINUTE` (default 60 per client address). Bodies over 64 KB, batches and methods other than POST are refused. Invalid tool calls are audited before rejection, as on stdio. Terminate TLS in front of the server.
 ## Connect to an authenticated FHIR server
 
 For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-launch/STU2.2/backend-services.html), set:
