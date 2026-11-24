@@ -60,7 +60,7 @@ describe("actual stdio process", () => {
       await client.connect(transport);
       expect(client.getServerVersion()?.version).toBe(version);
       const listed = await client.listTools();
-      expect(listed.tools).toHaveLength(8);
+      expect(listed.tools).toHaveLength(9);
       expect(
         await client.callTool({
           name: "get_patient",

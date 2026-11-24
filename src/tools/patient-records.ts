@@ -1,14 +1,26 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { PatientIdSchema, SinceDateSchema } from "../fhir/schemas.js";
+import {
+  IdentifierSearchSchema,
+  PatientIdSchema,
+  SinceDateSchema,
+} from "../fhir/schemas.js";
 import type { ToolName } from "../security/patient-policy.js";
-import { errorCode, requirePatientAccess } from "./access.js";
+import {
+  errorCode,
+  PatientAccessDenied,
+  requirePatientAccess,
+} from "./access.js";
 import type { ToolDeps } from "./types.js";
 
 export const PatientRecordInput = z.object({ patient_id: PatientIdSchema });
 export const GetEncountersInput = z.object({
   patient_id: PatientIdSchema,
   since: SinceDateSchema.optional(),
+});
+
+export const FindPatientInput = z.object({
+  identifier: IdentifierSearchSchema,
 });
 
 type PatientRecordInputType = z.infer<typeof PatientRecordInput>;
@@ -91,3 +103,36 @@ export const getPatientSummary = (
       active_medications: medications,
     };
   });
+
+/**
+ * Returns only matches the caller may open with find_patient, so a search never
+ * reveals that a patient outside the grant exists. One audit record per search.
+ */
+export async function findPatient(
+  input: z.infer<typeof FindPatientInput>,
+  deps: ToolDeps,
+) {
+  const base = {
+    tool: "find_patient",
+    patient_id: "identifier-search",
+    caller_identity: deps.config.CALLER_IDENTITY,
+    request_id: randomUUID(),
+  };
+  try {
+    if (!deps.authorizer.allowsTool(deps.context, "find_patient"))
+      throw new PatientAccessDenied();
+    const matches = await deps.fhir.findPatients(input.identifier);
+    const granted = matches.filter((p) =>
+      deps.authorizer.authorize(deps.context, "find_patient", p.id),
+    );
+    await deps.audit.record({ ...base, status: "success" });
+    return granted;
+  } catch (err) {
+    await deps.audit.record({
+      ...base,
+      status: "error",
+      error_code: errorCode(err),
+    });
+    throw err;
+  }
+}

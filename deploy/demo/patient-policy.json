@@ -18,7 +18,8 @@
         "get_conditions",
         "get_allergies",
         "get_immunizations",
-        "get_encounters"
+        "get_encounters",
+        "find_patient"
       ]
     }
   ]

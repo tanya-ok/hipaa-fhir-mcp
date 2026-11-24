@@ -12,6 +12,7 @@ export const TOOL_NAMES = [
   "get_immunizations",
   "get_encounters",
   "get_patient_summary",
+  "find_patient",
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
 
@@ -55,11 +56,14 @@ export interface PatientAuthorizer {
     tool: ToolName,
     patientId: string,
   ): boolean;
+  /** True when the caller holds this tool for at least one patient. */
+  allowsTool(context: RequestContext, tool: ToolName): boolean;
 }
 
 /** Used when no policy is configured: every request is refused. */
 export const DENY_ALL: PatientAuthorizer = Object.freeze({
   authorize: () => false,
+  allowsTool: () => false,
 });
 
 /** Exact principal, patient and tool match. No wildcards, no defaults. */
@@ -82,6 +86,11 @@ export function createPatientAuthorizer(
       const grant = grants.get(context.principal);
       if (grant === undefined) return false;
       return grant.tools.has(tool) && grant.patients.has(patientId);
+    },
+    allowsTool(context, tool) {
+      if (context.provenance === "none" || context.principal === null)
+        return false;
+      return grants.get(context.principal)?.tools.has(tool) ?? false;
     },
   };
   return Object.freeze(authorizer);

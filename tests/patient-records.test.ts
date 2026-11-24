@@ -5,7 +5,10 @@ import { ConfigSchema } from "../src/config.js";
 import { FhirError, HttpFhirClient } from "../src/fhir/client.js";
 import { requestContext } from "../src/security/context.js";
 import { createPatientAuthorizer } from "../src/security/patient-policy.js";
-import { getPatientSummary } from "../src/tools/patient-records.js";
+import {
+  findPatient,
+  getPatientSummary,
+} from "../src/tools/patient-records.js";
 
 const PATIENT = "synthetic-1";
 const bundle = (resources: unknown[]) => ({
@@ -148,6 +151,7 @@ describe("patient summary", () => {
       ]),
       getImmunizations: vi.fn(async () => []),
       getEncounters: vi.fn(async () => []),
+      findPatients: vi.fn(async () => []),
     };
     const principal = "spiffe://example.org/synthetic-a";
     const summary = await getPatientSummary(
@@ -173,5 +177,83 @@ describe("patient summary", () => {
       tool: "get_patient_summary",
       status: "success",
     });
+  });
+});
+
+describe("find_patient", () => {
+  const principal = "spiffe://example.org/synthetic-a";
+  const config = ConfigSchema.parse({
+    AUDIT_HMAC_KEY: "a".repeat(64),
+    NODE_ENV: "test",
+  });
+  function deps(tools: ("find_patient" | "get_patient")[]) {
+    const audit = new AuditLogger(config);
+    const record = vi.spyOn(audit, "record").mockResolvedValue();
+    const fhir = {
+      getPatient: vi.fn(),
+      searchObservations: vi.fn(),
+      getMedicationRequests: vi.fn(),
+      getConditions: vi.fn(),
+      getAllergies: vi.fn(),
+      getImmunizations: vi.fn(),
+      getEncounters: vi.fn(),
+      findPatients: vi.fn(async () => [
+        { resourceType: "Patient" as const, id: PATIENT },
+        { resourceType: "Patient" as const, id: "synthetic-outside" },
+      ]),
+    };
+    return {
+      fhir,
+      record,
+      deps: {
+        config,
+        audit,
+        fhir,
+        authorizer: createPatientAuthorizer({
+          version: 1,
+          grants: [{ principal, patients: [PATIENT], tools }],
+        }),
+        context: requestContext(principal, "spiffe-mtls+token"),
+      },
+    };
+  }
+
+  it("returns only matches inside the find_patient grant", async () => {
+    const { deps: d, record } = deps(["find_patient"]);
+    const found = await findPatient(
+      { identifier: "urn:sys|synthetic-mrn-secret" },
+      d,
+    );
+    expect(found.map((p) => p.id)).toEqual([PATIENT]);
+    expect(record).toHaveBeenCalledOnce();
+    expect(JSON.stringify(record.mock.calls[0]?.[0])).not.toContain(
+      "synthetic-mrn-secret",
+    );
+  });
+
+  it("does not search at all without a find_patient grant", async () => {
+    const { deps: d, fhir } = deps(["get_patient"]);
+    await expect(findPatient({ identifier: "urn:sys|123" }, d)).rejects.toThrow(
+      "patient_not_authorized",
+    );
+    expect(fhir.findPatients).not.toHaveBeenCalled();
+  });
+
+  it("searches Patient by identifier without a patient parameter", async () => {
+    const { fhir, requests } = client([
+      bundle([
+        {
+          resourceType: "Patient",
+          id: PATIENT,
+          name: [{ text: "private-name" }],
+        },
+      ]),
+    ]);
+    const result = await fhir.findPatients("urn:sys|123");
+    const url = new URL(requests[0] ?? "");
+    expect(url.pathname).toBe("/fhir/Patient");
+    expect(url.searchParams.get("identifier")).toBe("urn:sys|123");
+    expect(url.searchParams.has("patient")).toBe(false);
+    expect(JSON.stringify(result)).not.toContain("private-");
   });
 });
