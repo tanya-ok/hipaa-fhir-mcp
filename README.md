@@ -51,7 +51,7 @@ This repository sits at that intersection. It is a working scaffold that lets an
 - which ones live in code, which live in infrastructure, and which are organizational policy,
 - what the production path looks like when the prototype's stubs become real implementations.
 
-The point is not to ship a compliant system. The point is to make the gap between "MCP demo" and "HIPAA-compliant deployment" concrete enough to discuss. The full gap list is in [`docs/hipaa-compliance-mapping.md`](docs/hipaa-compliance-mapping.md).
+The point is not to ship a compliant system. The point is to make the gap between "MCP demo" and "HIPAA-compliant deployment" concrete enough to discuss. The full gap list is in [`docs/hipaa-compliance-mapping.md`](docs/hipaa-compliance-mapping.md). See also the [data flow](docs/data-flow.md), the [threat model](docs/threat-model.md) and [deploying inside your own HIPAA program](docs/deploy-inside-a-hipaa-program.md).
 
 The [shared Kubernetes lab](docs/kubernetes-lab.md) connects this server to `mcp-spiffe-bridge` and `mcp-svid-auth` using real SPIRE mTLS and OAuth. Audit output uses stderr, leaving stdout exclusively for stdio MCP messages.
 
