@@ -8,21 +8,24 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-25
+
 ### Added
 
-- Audit records carry `key_id`, a one-way label of the HMAC key, so records stay attributable after the key is rotated.
-- README: a table mapping each security claim to the test that pins it, and a "Where it falls short" section.
-- `find_patient`: look up patients by identifier (system|value); only matches inside the caller's `find_patient` grant are returned, and a caller without that grant is refused before any FHIR request. The identifier is not logged.
-- `typecheck` now also checks the tests.
-- Release workflow `image.yml`: multi-arch image on GHCR with SBOM and provenance attestations, keyless cosign signature, and a tools smoke test on the pushed digest.
-- `hipaa-fhir-mcp-http`: Streamable HTTP transport (stateless) with SHA-256-hashed bearer tokens mapped to policy principals, or a public demo mode pinned to the synthetic SMART sandbox; health endpoint, per-address rate limit, 64 KB body limit, optional Host pinning, and audited rejection of invalid tool calls.
 - Five read-only tools: `get_patient_summary` (patient, active conditions, allergies and active medications in one call), `get_conditions`, `get_allergies`, `get_immunizations` and `get_encounters` with an optional `since` date. Each needs its own grant in the patient policy and writes one audit record.
-- SMART Backend Services client authentication: `client_credentials` with a `private_key_jwt` assertion (RS384 or ES384), token endpoint discovery, token caching, and one retry with a new token after a 401. Configured with `SMART_CLIENT_ID`, `SMART_KEY_ID` and `SMART_PRIVATE_KEY_FILE`; the key file must not be readable by group or others.
-- An over-limit search now returns "Too many results (more than 200); narrow the request" instead of the generic failure text.
+- `find_patient`: look up patients by identifier (system|value); only matches inside the caller's `find_patient` grant are returned, and a caller without that grant is refused before any FHIR request. The identifier is not logged.
+- SMART Backend Services client authentication: `client_credentials` with a `private_key_jwt` assertion (RS384 or ES384), token endpoint discovery, token caching, and one retry with a new token after a 401. Configured with `SMART_CLIENT_ID`, `SMART_KEY_ID` and `SMART_PRIVATE_KEY_FILE`; the key file must be mode 600 and is read through one no-follow descriptor.
+- `hipaa-fhir-mcp-http`: Streamable HTTP transport (stateless) with SHA-256-hashed bearer tokens mapped to policy principals, or a public demo mode pinned to the synthetic SMART sandbox; health endpoint, per-address rate limit, 64 KB body limit, optional Host pinning, and audited rejection of invalid tool calls.
+- Release workflow `image.yml`: multi-arch image on GHCR with SBOM and provenance attestations, keyless cosign signature, and a tools smoke test on the pushed digest.
+- `deploy/demo/`: a public demo image recipe pinned to the synthetic sandbox and five synthetic patients; `scripts/smoke-live.mjs` calls every tool against any configured FHIR server without printing clinical content.
+- Audit records carry `key_id`, a one-way label of the HMAC key, so records stay attributable after the key is rotated.
+- README: a header with badges and the Glama card, a table mapping each security claim to the test that pins it, and a "Where it falls short" section.
 
 ### Changed
 
+- An over-limit search returns "Too many results (more than 200); narrow the request" instead of the generic failure text.
 - The base image is pinned by digest. The image entry point is `node` with `dist/server.js` as the default command, so `dist/http-server.js` can be passed instead.
+- `typecheck` also checks the tests.
 
 ## [0.6.0] - 2026-11-24
 
@@ -176,6 +179,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
+[0.7.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.3.0...v0.4.0

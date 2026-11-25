@@ -115,7 +115,7 @@ Every security claim in this README has a test that fails if the claim stops bei
       └─────────────────────┘
 ```
 
-The eight read-only MCP tools exposed to Claude. Each needs its own grant in the patient policy:
+The nine read-only MCP tools exposed to Claude. Each needs its own grant in the patient policy:
 
 | Tool | Input | Returns |
 |---|---|---|
@@ -127,6 +127,7 @@ The eight read-only MCP tools exposed to Claude. Each needs its own grant in the
 | `get_allergies` | `patient_id` | `AllergyIntolerance[]` |
 | `get_immunizations` | `patient_id` | `Immunization[]` |
 | `get_encounters` | `patient_id`, optional `since` (`YYYY-MM-DD`) | `Encounter[]` |
+| `find_patient` | `identifier` (`system\|value`) | matching `Patient[]` inside your grant |
 
 Results keep codes, statuses and dates only; display names, free text and notes are dropped. More than 200 results returns an error that asks the agent to narrow the request.
 
@@ -268,7 +269,7 @@ For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-lau
 | `SMART_CLIENT_ID` | the client id the authorization server issued |
 | `SMART_KEY_ID` | the `kid` of the registered public key |
 | `SMART_PRIVATE_KEY_FILE` | PEM private key, RSA 2048+ (RS384) or EC P-384 (ES384), mode 600 |
-| `SMART_SCOPE` | optional; defaults to `system/<Resource>.rs` for the eight tools |
+| `SMART_SCOPE` | optional; defaults to `system/<Resource>.rs` for every resource the tools read |
 | `SMART_TOKEN_URL` | optional; otherwise read from `.well-known/smart-configuration` |
 
 The server signs a short-lived client assertion (5 minutes, unique `jti`), exchanges it for an access token, caches the token until a minute before expiry and gets a new one once after a 401. Token endpoint responses and errors are never logged or returned to the agent. The token is sent only to the FHIR base origin. A static `FHIR_AUTH_TOKEN` remains available; the two cannot be combined.
