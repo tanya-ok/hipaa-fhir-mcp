@@ -22,7 +22,7 @@
 
 </div>
 
-> **Prototype.** Synthetic data only, not for real PHI. Not tested against a real EHR yet.
+> **Prototype.** Synthetic data only, not for real PHI. Tested against the Epic sandbox with its test patients only; not tested against a production EHR.
 
 | What the agent gets | What stays in place |
 |---|---|
@@ -86,7 +86,7 @@ Every security claim in this README has a test that fails if the claim stops bei
 
 ## Where it falls short
 
-- **Synthetic data only.** Not tested against a real EHR yet; not for real PHI. Using real PHI needs your own HIPAA program, BAAs with your hosting and model providers, and an independent review this project has not had.
+- **Synthetic data only.** Tested against the Epic sandbox with its test patients only, never against a production EHR; not for real PHI. Using real PHI needs your own HIPAA program, BAAs with your hosting and model providers, and an independent review this project has not had.
 - **Read only.** No writes, by design.
 - **The patient policy is a local file.** It is not SMART patient-level authorization or consent management.
 - **One maintainer.** Issues and reviews are welcome; see [CONTRIBUTING](CONTRIBUTING.md).
@@ -284,7 +284,7 @@ For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-lau
 
 The server signs a short-lived client assertion (5 minutes, unique `jti`), exchanges it for an access token, caches the token until a minute before expiry and gets a new one once after a 401. Token endpoint responses and errors are never logged or returned to the agent. The token is sent only to the FHIR base origin. A static `FHIR_AUTH_TOKEN` remains available; the two cannot be combined.
 
-The token flow was exercised against the public SMART bulk-data reference server. Real EHR sandboxes (Epic, Oracle Health, Medplum) were not tested yet.
+The token flow was exercised against the public SMART bulk-data reference server and, on 2026-11-25, against the Epic sandbox (`fhir.epic.com`, R4, backend app with a JWKS URL): `scripts/smoke-live.mjs` ran all eight patient tools for one Epic test patient with no failures. `find_patient` was not exercised there. The Epic app must use 64-character FHIR ids ("Use 64-Character-Limited FHIR IDs for USCDI FHIR Resources"); longer ids are rejected as invalid. Oracle Health and Medplum were not tested yet.
 
 ## Patient access policy
 
