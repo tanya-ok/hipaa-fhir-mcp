@@ -20,6 +20,10 @@ const HttpEnvSchema = z.object({
   MCP_HTTP_TOKENS_FILE: z.string().min(1).optional(),
   MCP_DEMO: z.enum(["0", "1"]).default("0"),
   MCP_ALLOWED_HOSTS: z.string().min(1).optional(),
+  MCP_CLIENT_IP_HEADER: z
+    .string()
+    .regex(/^[A-Za-z0-9-]{1,64}$/)
+    .optional(),
   MCP_RATE_LIMIT_PER_MINUTE: z.coerce
     .number()
     .int()
@@ -80,6 +84,7 @@ function main(): void {
     auth,
     version,
     limiter: new RateLimiter(http.MCP_RATE_LIMIT_PER_MINUTE, 60_000),
+    clientIpHeader: http.MCP_CLIENT_IP_HEADER,
     allowedHosts: http.MCP_ALLOWED_HOSTS?.split(",").map((h) =>
       h.trim().toLowerCase(),
     ),

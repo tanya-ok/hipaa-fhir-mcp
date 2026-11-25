@@ -140,6 +140,8 @@ export interface HttpOptions {
   version: string;
   limiter: RateLimiter;
   allowedHosts?: readonly string[];
+  /** Header a trusted proxy sets to the client address, for example Fly-Client-IP. */
+  clientIpHeader?: string;
 }
 
 export function createHttpHandler(options: HttpOptions) {
@@ -164,7 +166,14 @@ export function createHttpHandler(options: HttpOptions) {
       json(res, 403, { error: "host_not_allowed" });
       return;
     }
-    if (!limiter.allow(req.socket.remoteAddress ?? "unknown")) {
+    const forwarded = options.clientIpHeader
+      ? req.headers[options.clientIpHeader.toLowerCase()]
+      : undefined;
+    const client =
+      (typeof forwarded === "string" && forwarded.slice(0, 64)) ||
+      req.socket.remoteAddress ||
+      "unknown";
+    if (!limiter.allow(client)) {
       res.setHeader("Retry-After", "60");
       json(res, 429, { error: "rate_limited" });
       return;

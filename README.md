@@ -31,6 +31,16 @@
 | Fixed, safe error texts | Every call: one audit record, patient id HMAC-hashed |
 | Any FHIR R4 server, including SMART Backend Services | Deny by default: a grant per caller, patient and tool |
 
+## Try it without installing
+
+A public demo runs at `https://hipaa-fhir-mcp-demo.fly.dev/mcp` (Streamable HTTP, no key). It can only reach the public synthetic SMART sandbox and five synthetic patients, so it never serves real data.
+
+```sh
+claude mcp add --transport http hipaa-fhir-demo https://hipaa-fhir-mcp-demo.fly.dev/mcp
+```
+
+Then ask: *"Summarize patient 1ac8947d-038f-4cc7-81fa-a32e694187e8."* The other demo patients are listed in [`deploy/demo/patient-policy.json`](deploy/demo/patient-policy.json).
+
 ## Why this exists
 
 AI agents are increasingly given direct access to data systems through MCP. In healthcare, that data is regulated and the required controls are specific: HIPAA §164.312 names them. Most public MCP examples ignore the regulatory context; most HIPAA write-ups predate AI agents.
@@ -258,7 +268,7 @@ The default command runs the stdio server; pass `dist/http-server.js` as the com
 
 The file stores SHA-256 digests only; generate a token with `openssl rand -base64 32` and its digest with `printf %s "$TOKEN" | shasum -a 256`. `PATIENT_POLICY_FILE` is required in both modes.
 
-Other settings: `MCP_HTTP_HOST` (default `127.0.0.1`), `MCP_HTTP_PORT` (default `8080`), `MCP_ALLOWED_HOSTS` (comma-separated `Host` values; set it behind a public hostname), `MCP_RATE_LIMIT_PER_MINUTE` (default 60 per client address). Bodies over 64 KB, batches and methods other than POST are refused. Invalid tool calls are audited before rejection, as on stdio. Terminate TLS in front of the server.
+Other settings: `MCP_HTTP_HOST` (default `127.0.0.1`), `MCP_HTTP_PORT` (default `8080`), `MCP_ALLOWED_HOSTS` (comma-separated `Host` values; set it behind a public hostname), `MCP_RATE_LIMIT_PER_MINUTE` (default 60 per client address), `MCP_CLIENT_IP_HEADER` (behind a proxy, the header holding the client address, for example `Fly-Client-IP`; set it only when the proxy always overwrites that header). Bodies over 64 KB, batches and methods other than POST are refused. Invalid tool calls are audited before rejection, as on stdio. Terminate TLS in front of the server.
 ## Connect to an authenticated FHIR server
 
 For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-launch/STU2.2/backend-services.html), set:

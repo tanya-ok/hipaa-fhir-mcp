@@ -1,5 +1,7 @@
 # Public demo deployment
 
+Live at `https://hipaa-fhir-mcp-demo.fly.dev/mcp` (Fly.io, Amsterdam, `fly.toml` in this folder).
+
 A hosted endpoint anyone can try without installing anything. It can only ever
 reach the public synthetic SMART sandbox: `MCP_DEMO=1` refuses to start with any
 other `FHIR_BASE_URL` or with backend credentials, and the policy grants only

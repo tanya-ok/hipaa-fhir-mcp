@@ -1,0 +1,41 @@
+# Fly.io config for the public synthetic demo. Deploy from this folder:
+#   cd deploy/demo && fly deploy --remote-only --ha=false
+# Set the audit key once: fly secrets set AUDIT_HMAC_KEY=$(openssl rand -hex 32)
+app = "hipaa-fhir-mcp-demo"
+primary_region = "ams"
+
+[build]
+  dockerfile = "Dockerfile"
+
+  [build.args]
+    VERSION = "0.7.0"
+
+[env]
+  MCP_ALLOWED_HOSTS = "hipaa-fhir-mcp-demo.fly.dev"
+  # Fly's proxy sets this; without it every caller would share one rate limit.
+  MCP_CLIENT_IP_HEADER = "Fly-Client-IP"
+  # Until the image includes MCP_CLIENT_IP_HEADER (0.7.1), the limit is shared by all callers.
+  MCP_RATE_LIMIT_PER_MINUTE = "300"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 40
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
