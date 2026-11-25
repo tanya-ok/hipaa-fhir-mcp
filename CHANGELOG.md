@@ -8,6 +8,11 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Added
+
+- `MCP_CLIENT_IP_HEADER`: rate limit by the client address a trusted proxy sets (for example `Fly-Client-IP`) instead of the proxy's own address.
+- `deploy/demo/fly.toml` for the public synthetic demo on Fly.io.
+
 ## [0.7.0] - 2026-11-25
 
 ### Added

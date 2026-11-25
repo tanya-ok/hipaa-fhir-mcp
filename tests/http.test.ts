@@ -35,7 +35,11 @@ afterEach(async () => {
 
 async function start(
   auth: HttpAuth,
-  options: { limit?: number; allowedHosts?: string[] } = {},
+  options: {
+    limit?: number;
+    allowedHosts?: string[];
+    clientIpHeader?: string;
+  } = {},
 ) {
   const config = ConfigSchema.parse({
     AUDIT_HMAC_KEY: "a".repeat(64),
@@ -71,6 +75,7 @@ async function start(
     version: "test",
     limiter: new RateLimiter(options.limit ?? 1000, 60_000),
     allowedHosts: options.allowedHosts,
+    clientIpHeader: options.clientIpHeader,
   });
   const server = createServer((req, res) => void handler(req, res));
   servers.push(server);
@@ -204,6 +209,19 @@ describe("HTTP transport with bearer tokens", () => {
     const codes = [];
     for (let i = 0; i < 3; i++) codes.push((await post(base, body)).status);
     expect(codes[2]).toBe(429);
+  });
+
+  it("rate limits by the proxy client header when one is configured", async () => {
+    const { base } = await start(bearer, {
+      limit: 1,
+      clientIpHeader: "Fly-Client-IP",
+    });
+    const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" });
+    const a = { "Fly-Client-IP": "192.0.2.1" };
+    const b = { "Fly-Client-IP": "192.0.2.2" };
+    expect((await post(base, body, a)).status).not.toBe(429);
+    expect((await post(base, body, b)).status).not.toBe(429);
+    expect((await post(base, body, a)).status).toBe(429);
   });
 
   it("refuses an unexpected Host header when hosts are pinned", async () => {
