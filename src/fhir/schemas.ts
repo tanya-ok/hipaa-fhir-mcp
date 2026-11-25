@@ -176,7 +176,12 @@ export const SearchBundleSchema = z.object({
   type: z.literal("searchset"),
   total: z.number().int().nonnegative().optional(),
   entry: z
-    .array(z.object({ resource: z.unknown() }))
+    .array(
+      z.object({
+        resource: z.unknown(),
+        search: z.object({ mode: z.string().max(32).optional() }).optional(),
+      }),
+    )
     .max(MAX_RESULTS)
     .default([]),
   link: z

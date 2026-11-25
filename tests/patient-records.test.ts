@@ -73,6 +73,52 @@ describe("additional FHIR resources", () => {
     expect(requests[0]).toContain("AllergyIntolerance?patient=synthetic-1");
   });
 
+  it("skips search outcome entries and keeps the matches", async () => {
+    const { fhir } = client([
+      {
+        resourceType: "Bundle",
+        type: "searchset",
+        entry: [
+          {
+            resource: {
+              resourceType: "AllergyIntolerance",
+              id: "a-1",
+              patient: { reference: `Patient/${PATIENT}` },
+            },
+            search: { mode: "match" },
+          },
+          {
+            resource: {
+              resourceType: "OperationOutcome",
+              issue: [{ severity: "warning", code: "suppressed" }],
+            },
+            search: { mode: "outcome" },
+          },
+        ],
+        link: [],
+      },
+    ]);
+    const result = await fhir.getAllergies(PATIENT);
+    expect(result.map((r) => r.id)).toEqual(["a-1"]);
+  });
+
+  it("refuses an OperationOutcome marked as a match", async () => {
+    const { fhir } = client([
+      {
+        resourceType: "Bundle",
+        type: "searchset",
+        entry: [
+          {
+            resource: { resourceType: "OperationOutcome", issue: [] },
+            search: { mode: "match" },
+          },
+        ],
+        link: [],
+      },
+    ]);
+    await expect(fhir.getAllergies(PATIENT)).rejects.toBeInstanceOf(FhirError);
+  });
+
   it("refuses an Immunization for another patient", async () => {
     const { fhir } = client([
       bundle([

@@ -206,6 +206,13 @@ export class HttpFhirClient implements FhirClient {
       if (bundle.total !== undefined && bundle.total > MAX_RESULTS)
         throw new FhirError("FHIR result limit exceeded");
       for (const entry of bundle.entry) {
+        // Servers such as Epic add warnings as search.mode "outcome" entries.
+        if (
+          entry.search?.mode === "outcome" &&
+          (entry.resource as { resourceType?: unknown } | undefined)
+            ?.resourceType === "OperationOutcome"
+        )
+          continue;
         const resource = this.parse(schema, entry.resource);
         if (patientId !== null && subjectOf !== null) {
           const expected = `Patient/${patientId}`;
