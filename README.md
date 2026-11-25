@@ -74,6 +74,7 @@ Every security claim in this README has a test that fails if the claim stops bei
 | Claim | Test that fails if it stops being true |
 |---|---|
 | No tool runs for a patient outside the caller's grant, and the FHIR server is not called | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "denies another patient before dispatch with one audit record" |
+| An expired grant is denied, and the FHIR server is not called | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "denies an expired grant before dispatch with one audit record" |
 | Without a policy, every call is denied | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "denies everything without a policy"; [`stdio.test.ts`](tests/stdio.test.ts) "denies every tool call when no policy or principal is configured" |
 | Identity or grants in tool arguments are ignored | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "ignores identity and grant claims in tool arguments and metadata" |
 | Every call writes exactly one audit record, with the patient id HMAC-hashed and no PHI | [`stdio.test.ts`](tests/stdio.test.ts) "audits accepted, rejected and failed calls exactly once without contaminating stdout"; [`tools.test.ts`](tests/tools.test.ts) "writes one line per record with HMAC patient id and no PHI" |
@@ -288,7 +289,7 @@ The token flow was exercised against the public SMART bulk-data reference server
 
 ## Patient access policy
 
-Every tool checks the caller before any FHIR request and denies by default. A grant is an exact match of principal, patient and tool, loaded from `PATIENT_POLICY_FILE` (see [`patient-policy.example.json`](patient-policy.example.json)). An invalid policy file stops the server at startup. A denial returns `Patient access not authorized` and writes one audit record with `patient_not_authorized`.
+Every tool checks the caller before any FHIR request and denies by default. A grant is an exact match of principal, patient and tool, loaded from `PATIENT_POLICY_FILE` (see [`patient-policy.example.json`](patient-policy.example.json)). A grant may carry `expires_at` (ISO 8601 with a time zone, for example `2027-01-31T00:00:00Z`); once that time passes the grant is treated as absent, checked on every call. An invalid policy file stops the server at startup. A denial returns `Patient access not authorized` and writes one audit record with `patient_not_authorized`.
 
 | Mode | Where the principal comes from | Default |
 |---|---|---|

@@ -166,6 +166,35 @@ describe.each(tools)("$name authorization", ({ name, run, upstream }) => {
     expect(fhir[upstream]).not.toHaveBeenCalled();
   });
 
+  it("denies an expired grant before dispatch with one audit record", async () => {
+    const expiring = {
+      version: 1 as const,
+      grants: [
+        {
+          principal: A,
+          patients: [PATIENT_A],
+          tools: [...TOOL_NAMES],
+          expires_at: "2026-01-01T00:00:00Z",
+        },
+      ],
+    };
+    let clock = Date.parse("2025-12-31T23:59:59Z");
+    const authorizer = createPatientAuthorizer(expiring, () => clock);
+    const { deps, fhir, record } = harness(verifiedA, authorizer);
+    await run(deps, PATIENT_A);
+    expect(fhir[upstream]).toHaveBeenCalledOnce();
+    clock = Date.parse("2026-01-01T00:00:00Z");
+    await expect(run(deps, PATIENT_A)).rejects.toThrow(
+      "patient_not_authorized",
+    );
+    expect(fhir[upstream]).toHaveBeenCalledOnce();
+    expect(record).toHaveBeenCalledTimes(2);
+    expect(record.mock.calls[1]?.[0]).toMatchObject({
+      status: "error",
+      error_code: "patient_not_authorized",
+    });
+  });
+
   it("denies everything without a policy", async () => {
     const { deps, fhir } = harness(verifiedA, DENY_ALL);
     await expect(run(deps, PATIENT_A)).rejects.toThrow(
@@ -371,6 +400,20 @@ describe("policy loading", () => {
       JSON.stringify({
         version: 1,
         grants: [{ principal: A, patients: [PATIENT_A], tools: ["*"] }],
+      }),
+    ],
+    [
+      "expiry without a time zone",
+      JSON.stringify({
+        version: 1,
+        grants: [
+          {
+            principal: A,
+            patients: [PATIENT_A],
+            tools: ["get_patient"],
+            expires_at: "2027-01-01T00:00:00",
+          },
+        ],
       }),
     ],
     [
