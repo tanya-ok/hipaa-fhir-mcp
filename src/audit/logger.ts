@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import { appendFile } from "node:fs/promises";
 import type { Config } from "../config.js";
 
@@ -14,6 +14,23 @@ export interface AuditRecord {
   request_id: string;
   status: AuditStatus;
   error_code?: string;
+  /** One chain per process start; seq counts from 0 inside it. */
+  chain_id: string;
+  seq: number;
+  /** mac of the previous record in this chain, null for the first. */
+  prev: string | null;
+  /** HMAC-SHA-256 of the record without this field, under the audit key. */
+  mac: string;
+}
+
+/** The exact bytes the mac covers: the record without mac, in written key order. */
+export function auditMac(
+  key: string,
+  record: Omit<AuditRecord, "mac">,
+): string {
+  return createHmac("sha256", key)
+    .update(`hipaa-fhir-mcp audit chain:${JSON.stringify(record)}`, "utf8")
+    .digest("hex");
 }
 
 export interface AuditInput {
@@ -28,6 +45,9 @@ export interface AuditInput {
 export class AuditLogger {
   /** A one-way label of the key; the key itself cannot be derived from it. */
   readonly keyId: string;
+  private readonly chainId = randomUUID();
+  private seq = 0;
+  private prev: string | null = null;
 
   constructor(private readonly config: Config) {
     this.keyId = createHash("sha256")
@@ -52,12 +72,19 @@ export class AuditLogger {
 
   async record(entry: AuditInput): Promise<void> {
     const { patient_id, ...rest } = entry;
-    const record: AuditRecord = {
+    // Assigned synchronously, so concurrent calls still get a strict order.
+    const unsigned: Omit<AuditRecord, "mac"> = {
       timestamp: new Date().toISOString(),
       ...rest,
       patient_id_hmac: this.hmac(patient_id),
       key_id: this.keyId,
+      chain_id: this.chainId,
+      seq: this.seq++,
+      prev: this.prev,
     };
+    const mac = auditMac(this.config.AUDIT_HMAC_KEY, unsigned);
+    this.prev = mac;
+    const record: AuditRecord = { ...unsigned, mac };
     const line = `${JSON.stringify(record)}\n`;
 
     const file = this.config.AUDIT_LOG_FILE;

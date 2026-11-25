@@ -77,6 +77,7 @@ Every security claim in this README has a test that fails if the claim stops bei
 | Without a policy, every call is denied | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "denies everything without a policy"; [`stdio.test.ts`](tests/stdio.test.ts) "denies every tool call when no policy or principal is configured" |
 | Identity or grants in tool arguments are ignored | [`patient-policy.test.ts`](tests/patient-policy.test.ts) "ignores identity and grant claims in tool arguments and metadata" |
 | Every call writes exactly one audit record, with the patient id HMAC-hashed and no PHI | [`stdio.test.ts`](tests/stdio.test.ts) "audits accepted, rejected and failed calls exactly once without contaminating stdout"; [`tools.test.ts`](tests/tools.test.ts) "writes one line per record with HMAC patient id and no PHI" |
+| An edited, removed or repeated audit record is detected | [`audit-chain.test.ts`](tests/audit-chain.test.ts) "reports an edited record", "reports a removed record", "reports a repeated record" |
 | Audit records name the key that hashed them, so a key can be rotated | [`tools.test.ts`](tests/tools.test.ts) "labels records with a stable key id that differs per key" |
 | Names, free text and notes never reach the model | [`client.test.ts`](tests/client.test.ts) "follows bounded same-base pagination and strips nested free text"; [`patient-records.test.ts`](tests/patient-records.test.ts) "checks AllergyIntolerance.patient and drops free text" |
 | A resource for another patient fails the call | [`patient-records.test.ts`](tests/patient-records.test.ts) "refuses an Immunization for another patient" |
@@ -298,6 +299,19 @@ Every tool checks the caller before any FHIR request and denies by default. A gr
 `CALLER_IDENTITY` remains an audit label and never grants access. Tool arguments cannot supply an identity or a grant. This is a local policy for the prototype, not SMART authorization or clinical consent; a compromised caller can still misuse the patients it is granted.
 
 Use synthetic patient ids only. To try the sandbox, copy the example, put a sandbox patient id in `patients`, and set both variables.
+
+## Audit log integrity and key rotation
+
+Every audit record carries `chain_id` (one per process start), `seq`, `prev` and `mac`. `mac` is an HMAC-SHA-256 of the record under `AUDIT_HMAC_KEY`, and `prev` is the `mac` of the record before it. To check a log file:
+
+```fish
+pnpm build
+AUDIT_HMAC_KEY=<key> node scripts/verify-audit.mjs /path/to/audit.jsonl
+```
+
+It reports an edited record, and a record removed from or repeated inside a chain, and exits non-zero. It prints counts only. Limits: records cut from the end of a chain and a whole removed chain are not detected, and anyone holding the key can re-sign a log. Ship the log to append-only storage for those cases.
+
+To rotate the key: start the server with a new `AUDIT_HMAC_KEY`. New records get a new `key_id` and a new chain. Keep the old key in your secrets manager for as long as the old records are retained, and verify them with it; records under another key are counted as skipped. The same patient hashes differently under the new key, so cross-referencing a patient across the rotation needs both keys.
 
 ## Install in Claude Desktop
 
