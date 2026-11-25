@@ -31,6 +31,16 @@
 | Fixed, safe error texts | Every call: one audit record, patient id HMAC-hashed |
 | Any FHIR R4 server, including SMART Backend Services | Deny by default: a grant per caller, patient and tool |
 
+## Try it without installing
+
+A public demo runs at `https://hipaa-fhir-mcp-demo.fly.dev/mcp` (Streamable HTTP, no key). It can only reach the public synthetic SMART sandbox and five synthetic patients, so it never serves real data.
+
+```sh
+claude mcp add --transport http hipaa-fhir-demo https://hipaa-fhir-mcp-demo.fly.dev/mcp
+```
+
+Then ask: *"Summarize patient 1ac8947d-038f-4cc7-81fa-a32e694187e8."* The other demo patients are listed in [`deploy/demo/patient-policy.json`](deploy/demo/patient-policy.json).
+
 ## Why this exists
 
 AI agents are increasingly given direct access to data systems through MCP. In healthcare, that data is regulated and the required controls are specific: HIPAA §164.312 names them. Most public MCP examples ignore the regulatory context; most HIPAA write-ups predate AI agents.

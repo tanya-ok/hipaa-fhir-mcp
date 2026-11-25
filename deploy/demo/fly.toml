@@ -1,5 +1,5 @@
-# Fly.io config for the public synthetic demo. Deploy from the repository root:
-#   fly deploy deploy/demo --config deploy/demo/fly.toml
+# Fly.io config for the public synthetic demo. Deploy from this folder:
+#   cd deploy/demo && fly deploy --remote-only --ha=false
 # Set the audit key once: fly secrets set AUDIT_HMAC_KEY=$(openssl rand -hex 32)
 app = "hipaa-fhir-mcp-demo"
 primary_region = "ams"
