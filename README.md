@@ -188,7 +188,7 @@ SMART, clinical consent, durable log collection and key management remain gaps.
 ## Requirements
 
 - Node.js 26+
-- pnpm 10 (Corepack picks up the version pinned in `package.json`; Node 25+ does not bundle it, so run `npm install -g corepack && corepack enable` once)
+- pnpm (Corepack picks up the version pinned in `package.json`; Node 25+ does not bundle it, so run `npm install -g corepack && corepack enable` once)
 
 ## Install
 
@@ -196,7 +196,11 @@ SMART, clinical consent, durable log collection and key management remain gaps.
 cd hipaa-fhir-mcp
 pnpm install
 cp .env.example .env   # tweak AUDIT_LOG_FILE, CALLER_IDENTITY if you want
+cp patient-policy.example.json patient-policy.json   # put a synthetic patient id in it
+chmod 600 patient-policy.json
 ```
+
+Then set `PATIENT_POLICY_FILE` to the absolute path of `patient-policy.json` and `LOCAL_SYNTHETIC_PRINCIPAL=local-synthetic-operator` in `.env`. Without both, every tool call returns `Patient access not authorized` (see [Patient access policy](#patient-access-policy)).
 
 The required env vars are:
 
@@ -423,6 +427,8 @@ The full control-by-control table is in [`docs/hipaa-compliance-mapping.md`](doc
 hipaa-fhir-mcp/
 ├── src/
 │   ├── server.ts              # stdio entry point
+│   ├── http-server.ts         # Streamable HTTP entry point
+│   ├── http.ts                # HTTP transport: tokens, demo mode, rate limit
 │   ├── mcp.ts                 # transport-independent MCP server factory
 │   ├── stdio.ts               # stdio transport that audits pre-handler rejections
 │   ├── config.ts              # zod-validated env, fails fast
@@ -434,10 +440,15 @@ hipaa-fhir-mcp/
 │   │   └── types.ts           # minimal FHIR R4 types
 │   ├── tools/
 │   │   ├── types.ts
+│   │   ├── access.ts          # policy check shared by the tools
 │   │   ├── get-patient.ts
 │   │   ├── search-observations.ts
-│   │   └── get-medication-list.ts
+│   │   ├── get-medication-list.ts
+│   │   └── patient-records.ts # summary, conditions, allergies, immunizations, encounters, find
 │   └── security/
+│       ├── context.ts         # per-request caller context
+│       ├── patient-policy.ts  # deny-by-default patient and tool grants
+│       ├── smart-backend.ts   # SMART Backend Services client assertion and token cache
 │       ├── oauth.ts           # SMART-on-FHIR OAuth 2.1 + PKCE stub
 │       ├── spiffe.ts          # SPIFFE Workload API stub
 │       └── kms.ts             # KMS envelope encryption stub
@@ -445,7 +456,11 @@ hipaa-fhir-mcp/
 │   ├── fixtures/stdio-http.ts
 │   ├── client.test.ts
 │   ├── config.test.ts
+│   ├── http.test.ts
 │   ├── mcp.test.ts
+│   ├── patient-policy.test.ts
+│   ├── patient-records.test.ts
+│   ├── smart-backend.test.ts
 │   ├── stdio.test.ts
 │   └── tools.test.ts
 ├── scripts/
@@ -453,7 +468,8 @@ hipaa-fhir-mcp/
 │   ├── package-mcpb.mjs       # gated Desktop bundle packer
 │   ├── check-mcpb.py          # bundle payload gate
 │   ├── test-mcpb.py           # payload gate cases
-│   └── demo-package.mjs       # installed-package stdio demo
+│   ├── demo-package.mjs       # installed-package stdio demo
+│   └── smoke-live.mjs         # live smoke test of every tool, prints no clinical content
 ├── deploy/kubernetes/         # shared lab gateway and probe (not standalone)
 ├── docs/                      # documentation site sources (Zensical)
 ├── .github/                   # workflows, Dependabot, templates

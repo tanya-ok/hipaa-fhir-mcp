@@ -49,6 +49,7 @@ pnpm dlx @modelcontextprotocol/inspector pnpm exec tsx src/server.ts
 | Path | Purpose |
 |---|---|
 | `src/server.ts` | MCP server entry point (stdio) |
+| `src/http-server.ts`, `src/http.ts` | Streamable HTTP entry point and transport (tokens, demo mode, rate limit) |
 | `src/mcp.ts` | Transport-independent MCP server factory and tool registration |
 | `src/stdio.ts` | Stdio transport that audits pre-handler rejections |
 | `src/config.ts` | zod-validated env, fails fast on missing values |
@@ -56,11 +57,13 @@ pnpm dlx @modelcontextprotocol/inspector pnpm exec tsx src/server.ts
 | `src/fhir/client.ts` | HTTP FHIR client (axios), swappable for HealthLake |
 | `src/fhir/schemas.ts` | Bounded response schemas and the shared patient id schema |
 | `src/fhir/types.ts` | Minimal FHIR R4 types used by the tools |
-| `src/tools/*.ts` | The three exposed MCP tools and their zod input schemas |
+| `src/tools/*.ts` | The nine exposed MCP tools and their zod input schemas |
+| `src/security/patient-policy.ts` | Deny-by-default patient and tool grants, checked before any FHIR request |
+| `src/security/smart-backend.ts` | SMART Backend Services client authentication (implemented) |
 | `src/security/oauth.ts` | SMART-on-FHIR OAuth 2.1 + PKCE stub |
 | `src/security/spiffe.ts` | SPIFFE Workload API stub |
 | `src/security/kms.ts` | KMS envelope encryption stub |
-| `tests/tools.test.ts` | Unit tests against a stub FHIR client |
+| `tests/*.test.ts` | Unit tests against stub FHIR clients and a local HTTP fixture |
 | `docs/hipaa-compliance-mapping.md` | Control-by-control HIPAA mapping |
 
 ## Hard rules
