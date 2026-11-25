@@ -8,6 +8,8 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-25
+
 ### Added
 
 - `MCP_CLIENT_IP_HEADER`: rate limit by the client address a trusted proxy sets (for example `Fly-Client-IP`) instead of the proxy's own address.
@@ -184,6 +186,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
+[0.7.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.4.0...v0.5.0

@@ -8,14 +8,12 @@ primary_region = "ams"
   dockerfile = "Dockerfile"
 
   [build.args]
-    VERSION = "0.7.0"
+    VERSION = "0.7.1"
 
 [env]
   MCP_ALLOWED_HOSTS = "hipaa-fhir-mcp-demo.fly.dev"
   # Fly's proxy sets this; without it every caller would share one rate limit.
   MCP_CLIENT_IP_HEADER = "Fly-Client-IP"
-  # Until the image includes MCP_CLIENT_IP_HEADER (0.7.1), the limit is shared by all callers.
-  MCP_RATE_LIMIT_PER_MINUTE = "300"
 
 [http_service]
   internal_port = 8080
