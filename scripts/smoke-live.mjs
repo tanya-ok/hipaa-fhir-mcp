@@ -5,6 +5,7 @@
 // It prints only tool names, success or the fixed error text, and result counts:
 // no clinical content is printed. Usage: SMOKE_PATIENT_ID=<id> node scripts/smoke-live.mjs
 // Set SMOKE_IDENTIFIER=<system|value> to also call find_patient; it must return that patient.
+// Set SMOKE_SINCE=<YYYY-MM-DD> when a patient has more than 200 lab results or vital signs.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
@@ -13,6 +14,8 @@ if (!patient) {
   process.stderr.write("Set SMOKE_PATIENT_ID to a patient in your policy.\n");
   process.exit(2);
 }
+// Long histories exceed the 200 result limit; SMOKE_SINCE narrows the dated tools.
+const since = process.env.SMOKE_SINCE ? { since: process.env.SMOKE_SINCE } : {};
 const args = {
   get_patient_summary: { patient_id: patient },
   get_patient: { patient_id: patient },
@@ -22,6 +25,12 @@ const args = {
   get_encounters: { patient_id: patient },
   get_medication_list: { patient_id: patient },
   search_observations: { patient_id: patient, code: "http://loinc.org|8867-4" },
+  get_procedures: { patient_id: patient, ...since },
+  get_diagnostic_reports: { patient_id: patient, ...since },
+  get_lab_results: { patient_id: patient, ...since },
+  get_vital_signs: { patient_id: patient, ...since },
+  get_care_team: { patient_id: patient },
+  get_goals: { patient_id: patient },
 };
 const identifier = process.env.SMOKE_IDENTIFIER;
 if (identifier) args.find_patient = { identifier };

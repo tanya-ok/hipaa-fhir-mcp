@@ -53,6 +53,12 @@ export interface Observation {
   valueQuantity?: Quantity;
   valueCodeableConcept?: CodeableConcept;
   valueString?: string;
+  interpretation?: CodeableConcept[];
+  component?: {
+    code: CodeableConcept;
+    valueQuantity?: Quantity;
+    valueCodeableConcept?: CodeableConcept;
+  }[];
 }
 
 export interface MedicationRequest {

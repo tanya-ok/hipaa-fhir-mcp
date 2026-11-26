@@ -8,6 +8,12 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Added
+
+- Six read-only tools: `get_procedures`, `get_diagnostic_reports`, `get_lab_results`, `get_vital_signs` (each with an optional `since` date), `get_care_team` and `get_goals`. Each needs its own grant in the patient policy and writes one audit record. Narrative conclusions, attachments, care team members and free text are not returned.
+- Observations now include coded `interpretation` and panel `component` values.
+- The default SMART scope also requests `Procedure`, `DiagnosticReport`, `CareTeam` and `Goal`.
+
 ## [0.8.1] - 2026-11-26
 
 ### Changed
