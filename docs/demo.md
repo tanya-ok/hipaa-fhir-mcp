@@ -49,10 +49,10 @@ No PHI is involved. The walkthrough talks to the public SMART sandbox at
 
 | Claim | Evidence |
 |---|---|
-| The three MCP tools work end to end | Inspector returns a real `Patient` resource, Desktop calls them from natural-language prompts |
+| The MCP tools work end to end | Inspector returns a real `Patient` resource, Desktop calls them from natural-language prompts |
 | Patient ids never land in logs | `grep` for the id in the audit file returns nothing; only the keyed HMAC-SHA-256 digest is present |
 | Each tool call emits a structured audit record | T2 grows by one JSON line per call, with `tool`, `patient_id_hmac`, `caller_identity`, `request_id`, `status` |
-| Claude Desktop can use the server through MCP | The three tools appear in the Desktop tools menu under `hipaa-fhir-mcp` |
+| Claude Desktop can use the server through MCP | The tools appear in the Desktop tools menu under `hipaa-fhir-mcp` |
 
 ## Prerequisites
 
@@ -104,11 +104,14 @@ pnpm dlx @modelcontextprotocol/inspector node --env-file=.env --import tsx src/s
 ```
 
 Inspector prints a `localhost` URL on startup. Open it in a browser. The
-left pane lists the three registered tools:
+left pane lists the registered tools:
 
 - `get_patient`
 - `search_observations`
 - `get_medication_list`
+- `get_conditions`, `get_allergies`, `get_immunizations`, `get_encounters`
+- `get_patient_summary`
+- `find_patient`
 
 Tool calls are denied unless the server has a patient policy. Copy `patient-policy.example.json`, put `<PATIENT_ID>` in `patients`, and start the server with `PATIENT_POLICY_FILE` and `LOCAL_SYNTHETIC_PRINCIPAL=local-synthetic-operator`.
 
@@ -199,7 +202,7 @@ the result into `command`.
 Inspector value, so the audit lines from each surface are easy to tell
 apart in T2.
 
-Restart Claude Desktop. The three tools appear in the tools menu under
+Restart Claude Desktop. The tools appear in the tools menu under
 `hipaa-fhir-mcp`.
 
 ## Step 7: drive the server from Desktop
