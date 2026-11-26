@@ -4,6 +4,7 @@
 // LOCAL_SYNTHETIC_PRINCIPAL, AUDIT_HMAC_KEY) and calls every tool for one patient.
 // It prints only tool names, success or the fixed error text, and result counts:
 // no clinical content is printed. Usage: SMOKE_PATIENT_ID=<id> node scripts/smoke-live.mjs
+// Set SMOKE_IDENTIFIER=<system|value> to also call find_patient; it must return that patient.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
@@ -22,6 +23,8 @@ const args = {
   get_medication_list: { patient_id: patient },
   search_observations: { patient_id: patient, code: "http://loinc.org|8867-4" },
 };
+const identifier = process.env.SMOKE_IDENTIFIER;
+if (identifier) args.find_patient = { identifier };
 
 const client = new Client({ name: "smoke-live", version: "1" });
 await client.connect(
@@ -48,6 +51,11 @@ for (const tool of tools) {
     continue;
   }
   const value = JSON.parse(text);
+  if (tool.name === "find_patient" && !value.some((p) => p.id === patient)) {
+    failed += 1;
+    console.log('find_patient: error "expected patient not in the result"');
+    continue;
+  }
   const shape = Array.isArray(value)
     ? `${value.length} items`
     : Object.entries(value)
