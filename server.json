@@ -48,7 +48,7 @@
         },
         {
           "name": "SMART_TOKEN_URL",
-          "description": "SMART token endpoint; required when NODE_ENV=production, otherwise read from .well-known/smart-configuration"
+          "description": "SMART token endpoint; required unless NODE_ENV is development or test, where it is read from .well-known/smart-configuration"
         },
         {
           "name": "PATIENT_POLICY_FILE",

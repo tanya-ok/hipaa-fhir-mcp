@@ -86,6 +86,17 @@ describe("audit hash chain", () => {
     expect(result).toEqual({ verified: 3, skipped: 2, problems: [] });
   });
 
+  it("reports lines that are not objects instead of failing", async () => {
+    const { lines, keyId } = await write("shapes.jsonl", 1);
+    const result = verifyAuditLines([...lines, "null", "[]", "42"], KEY, keyId);
+    expect(result.verified).toBe(1);
+    expect(result.problems).toEqual([
+      "line 2: not an audit record",
+      "line 3: not an audit record",
+      "line 4: not an audit record",
+    ]);
+  });
+
   it("reports skipped records in strict mode", async () => {
     const { lines, keyId } = await write("strict.jsonl", 2);
     const injected = JSON.stringify({ tool: "get_patient", key_id: "other" });

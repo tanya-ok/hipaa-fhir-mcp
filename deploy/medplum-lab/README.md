@@ -58,6 +58,6 @@ Expected last line: `9 tools, 0 failed`.
   local authority and Node trusts that root through `NODE_EXTRA_CA_CERTS`.
 - Create the client in a regular project. Medplum refuses SMART scopes for
   clients in its super admin project.
-- The database password in `compose.yml` is a fixed lab value and no port
-  except 8443 is published. Do not reuse this file outside a local test.
+- The database password in `compose.yml` is a fixed lab value and only port
+  8443 is published, on 127.0.0.1. Do not reuse this file outside a local test.
 - Remove everything with `docker compose down -v`.

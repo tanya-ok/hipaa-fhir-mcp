@@ -31,6 +31,8 @@ describe("endpoint policy", () => {
       SMART_PRIVATE_KEY_FILE: "/run/secrets/smart.pem",
     };
     expect(ConfigSchema.safeParse(smart).success).toBe(true);
+    const { NODE_ENV: _mode, ...unset } = smart;
+    expect(ConfigSchema.safeParse(unset).success).toBe(false);
     expect(
       ConfigSchema.safeParse({ ...smart, NODE_ENV: "production" }).success,
     ).toBe(false);

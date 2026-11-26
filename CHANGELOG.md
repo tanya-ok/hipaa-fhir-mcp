@@ -8,6 +8,14 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Changed
+
+- `SMART_TOKEN_URL` is now required with SMART Backend Services unless `NODE_ENV` is `development` or `test`; an unset `NODE_ENV` no longer allows token endpoint discovery.
+
+### Fixed
+
+- `scripts/verify-audit.mjs` reports a log line that is not a JSON object as a problem instead of stopping.
+
 ### Added
 
 - `deploy/medplum-lab`: a local Medplum with a seed script to run the live smoke test against a second FHIR server over SMART Backend Services.

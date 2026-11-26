@@ -118,7 +118,8 @@ export const ConfigSchema = z
       });
     }
     if (
-      config.NODE_ENV === "production" &&
+      config.NODE_ENV !== "development" &&
+      config.NODE_ENV !== "test" &&
       smart.some(Boolean) &&
       !config.SMART_TOKEN_URL
     ) {
@@ -126,7 +127,7 @@ export const ConfigSchema = z
         code: "custom",
         path: ["SMART_TOKEN_URL"],
         message:
-          "SMART_TOKEN_URL is required in production, so the client assertion is never sent to an endpoint taken from discovery",
+          "SMART_TOKEN_URL is required unless NODE_ENV is development or test, so the client assertion is never sent to an endpoint taken from discovery",
       });
     }
     if (
