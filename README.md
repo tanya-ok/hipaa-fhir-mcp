@@ -290,7 +290,7 @@ For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-lau
 
 The server signs a short-lived client assertion (5 minutes, unique `jti`), exchanges it for an access token, caches the token until a minute before expiry and gets a new one once after a 401. Token endpoint responses and errors are never logged or returned to the agent. The token is sent only to the FHIR base origin. A static `FHIR_AUTH_TOKEN` remains available; the two cannot be combined.
 
-The token flow was exercised against the public SMART bulk-data reference server and, on 2026-11-25, against the Epic sandbox (`fhir.epic.com`, R4, backend app with a JWKS URL): `scripts/smoke-live.mjs` ran all nine tools for one Epic test patient with no failures, including `find_patient` by identifier. The Epic app must use 64-character FHIR ids ("Use 64-Character-Limited FHIR IDs for USCDI FHIR Resources"); longer ids are rejected as invalid. Oracle Health and Medplum were not tested yet.
+The token flow was exercised against the public SMART bulk-data reference server and, on 2026-11-25, against the Epic sandbox (`fhir.epic.com`, R4, backend app with a JWKS URL): `scripts/smoke-live.mjs` ran all nine tools for one Epic test patient with no failures, including `find_patient` by identifier. The Epic app must use 64-character FHIR ids ("Use 64-Character-Limited FHIR IDs for USCDI FHIR Resources"); longer ids are rejected as invalid. On 2026-11-26 release 0.8.0 also passed all nine tools against a local Medplum 5.2.18 with an RS384 key; [`deploy/medplum-lab`](deploy/medplum-lab/README.md) reproduces that run. A local server is not a hosted vendor sandbox, and Oracle Health was not tested yet.
 
 ## Patient access policy
 
@@ -485,6 +485,7 @@ hipaa-fhir-mcp/
 │   ├── test-mcpb.py           # payload gate cases
 │   ├── demo-package.mjs       # installed-package stdio demo
 │   └── smoke-live.mjs         # live smoke test of every tool, prints no clinical content
+├── deploy/medplum-lab/        # local Medplum to run the live smoke test against
 ├── deploy/kubernetes/         # shared lab gateway and probe (not standalone)
 ├── docs/                      # documentation site sources (Zensical)
 ├── .github/                   # workflows, Dependabot, templates
