@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.tanya-ok/hipaa-fhir-mcp",
-  "title": "HIPAA FHIR MCP (prototype)",
-  "description": "Prototype: fifteen read-only FHIR R4 tools, per-patient grants and HMAC audit. Synthetic data only.",
+  "title": "HIPAA FHIR MCP",
+  "description": "Fifteen read-only FHIR R4 tools with per-patient grants and HMAC audit. Synthetic data only.",
   "version": "0.8.0",
   "repository": {
     "url": "https://github.com/tanya-ok/hipaa-fhir-mcp",

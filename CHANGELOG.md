@@ -14,6 +14,10 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 - Observations now include coded `interpretation` and panel `component` values.
 - The default SMART scope also requests `Procedure`, `DiagnosticReport`, `CareTeam` and `Goal`.
 
+### Changed
+
+- The registry title in `server.json` is now `HIPAA FHIR MCP`; the description still states synthetic data only.
+
 ## [0.8.1] - 2026-11-26
 
 ### Changed
