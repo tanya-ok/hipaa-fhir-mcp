@@ -152,13 +152,22 @@ await fhir({
   period: { start: "2026-10-15T09:00:00Z", end: "2026-10-15T09:30:00Z" },
 });
 
+// Only well-formed FHIR ids from the server reach the files written below.
+function fhirId(value) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9.-]{1,64}$/.test(value))
+    throw new Error("Server returned a malformed id");
+  return value;
+}
+const clientId = fhirId(client.id);
+const patientId = fhirId(patient.id);
+
 const here = (name) => new URL(`./${name}`, import.meta.url);
 writeFileSync(
   here("lab.json"),
   `${JSON.stringify(
     {
-      clientId: client.id,
-      patientId: patient.id,
+      clientId,
+      patientId,
       identifier: `${identifier.system}|${identifier.value}`,
     },
     null,
@@ -173,7 +182,7 @@ writeFileSync(
       grants: [
         {
           principal: "local-synthetic-operator",
-          patients: [patient.id],
+          patients: [patientId],
           tools: [
             "get_patient",
             "get_patient_summary",
@@ -193,5 +202,5 @@ writeFileSync(
   )}\n`,
   { mode: 0o600 },
 );
-console.log(`client ${client.id}`);
-console.log(`patient ${patient.id}`);
+console.log(`client ${clientId}`);
+console.log(`patient ${patientId}`);
