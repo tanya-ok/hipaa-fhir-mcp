@@ -23,6 +23,10 @@ export const DEFAULT_SMART_SCOPE = [
   "AllergyIntolerance",
   "Immunization",
   "Encounter",
+  "Procedure",
+  "DiagnosticReport",
+  "CareTeam",
+  "Goal",
 ]
   .map((type) => `system/${type}.rs`)
   .join(" ");

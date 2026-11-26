@@ -113,6 +113,8 @@ left pane lists the registered tools:
 - `get_conditions`, `get_allergies`, `get_immunizations`, `get_encounters`
 - `get_patient_summary`
 - `find_patient`
+- `get_procedures`, `get_diagnostic_reports`, `get_lab_results`, `get_vital_signs`
+- `get_care_team`, `get_goals`
 
 Tool calls are denied unless the server has a patient policy. Copy `patient-policy.example.json`, put `<PATIENT_ID>` in `patients`, and start the server with `PATIENT_POLICY_FILE` and `LOCAL_SYNTHETIC_PRINCIPAL=local-synthetic-operator`.
 

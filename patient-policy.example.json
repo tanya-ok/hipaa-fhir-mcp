@@ -13,7 +13,13 @@
         "get_immunizations",
         "get_encounters",
         "get_patient_summary",
-        "find_patient"
+        "find_patient",
+        "get_procedures",
+        "get_diagnostic_reports",
+        "get_lab_results",
+        "get_vital_signs",
+        "get_care_team",
+        "get_goals"
       ]
     }
   ]

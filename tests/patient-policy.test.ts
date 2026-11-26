@@ -24,10 +24,16 @@ import { getMedicationList } from "../src/tools/get-medication-list.js";
 import { getPatient } from "../src/tools/get-patient.js";
 import {
   getAllergies,
+  getCareTeam,
   getConditions,
+  getDiagnosticReports,
   getEncounters,
+  getGoals,
   getImmunizations,
+  getLabResults,
   getPatientSummary,
+  getProcedures,
+  getVitalSigns,
 } from "../src/tools/patient-records.js";
 import { searchObservations } from "../src/tools/search-observations.js";
 import type { ToolDeps } from "../src/tools/types.js";
@@ -68,6 +74,11 @@ function harness(
     getImmunizations: vi.fn(async () => []),
     getEncounters: vi.fn(async () => []),
     findPatients: vi.fn(async () => []),
+    getProcedures: vi.fn(async () => []),
+    getDiagnosticReports: vi.fn(async () => []),
+    getObservationsByCategory: vi.fn(async () => []),
+    getCareTeams: vi.fn(async () => []),
+    getGoals: vi.fn(async () => []),
   } satisfies FhirClient;
   const deps: ToolDeps = { config, audit, fhir, authorizer, context };
   return { deps, fhir, record };
@@ -121,6 +132,41 @@ const tools = [
     run: (deps: ToolDeps, patient_id: string) =>
       getPatientSummary({ patient_id }, deps),
     upstream: "getConditions",
+  },
+  {
+    name: "get_procedures",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getProcedures({ patient_id, since: "2024-01-01" }, deps),
+    upstream: "getProcedures",
+  },
+  {
+    name: "get_diagnostic_reports",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getDiagnosticReports({ patient_id }, deps),
+    upstream: "getDiagnosticReports",
+  },
+  {
+    name: "get_lab_results",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getLabResults({ patient_id }, deps),
+    upstream: "getObservationsByCategory",
+  },
+  {
+    name: "get_vital_signs",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getVitalSigns({ patient_id }, deps),
+    upstream: "getObservationsByCategory",
+  },
+  {
+    name: "get_care_team",
+    run: (deps: ToolDeps, patient_id: string) =>
+      getCareTeam({ patient_id }, deps),
+    upstream: "getCareTeams",
+  },
+  {
+    name: "get_goals",
+    run: (deps: ToolDeps, patient_id: string) => getGoals({ patient_id }, deps),
+    upstream: "getGoals",
   },
 ] as const;
 

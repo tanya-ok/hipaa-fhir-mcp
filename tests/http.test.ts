@@ -59,6 +59,11 @@ async function start(
     getImmunizations: vi.fn(async () => []),
     getEncounters: vi.fn(async () => []),
     findPatients: vi.fn(async () => []),
+    getProcedures: vi.fn(async () => []),
+    getDiagnosticReports: vi.fn(async () => []),
+    getObservationsByCategory: vi.fn(async () => []),
+    getCareTeams: vi.fn(async () => []),
+    getGoals: vi.fn(async () => []),
   } satisfies FhirClient;
   const principal = auth.mode === "demo" ? DEMO_PRINCIPAL : PRINCIPAL;
   const handler = createHttpHandler({

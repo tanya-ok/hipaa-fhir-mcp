@@ -14,11 +14,18 @@ import {
   findPatient,
   GetEncountersInput,
   getAllergies,
+  getCareTeam,
   getConditions,
+  getDiagnosticReports,
   getEncounters,
+  getGoals,
   getImmunizations,
+  getLabResults,
   getPatientSummary,
+  getProcedures,
+  getVitalSigns,
   PatientRecordInput,
+  RecordsSinceInput,
 } from "./tools/patient-records.js";
 import {
   SearchObservationsInput,
@@ -65,6 +72,12 @@ export const toolInputSchemas = {
   get_encounters: GetEncountersInput,
   get_patient_summary: PatientRecordInput,
   find_patient: FindPatientInput,
+  get_procedures: RecordsSinceInput,
+  get_diagnostic_reports: RecordsSinceInput,
+  get_lab_results: RecordsSinceInput,
+  get_vital_signs: RecordsSinceInput,
+  get_care_team: PatientRecordInput,
+  get_goals: PatientRecordInput,
 };
 
 /**
@@ -296,6 +309,144 @@ export function createFhirMcpServer(
     async (input) => {
       try {
         return toTextResult(await findPatient(input, requestDeps()));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "get_procedures",
+    {
+      title: "Get Procedures",
+      description:
+        'List FHIR R4 Procedure resources (surgeries, interventions and other procedures) for one patient. Pass since (YYYY-MM-DD) for patients with a long history. Returns a JSON array with status, category, procedure code (system and code only; display and free text are dropped) and the performed date or period. Read only. Every call writes one audit record in which the patient id is HMAC-hashed; no PHI is logged. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request. More than 200 results returns "Too many results (more than 200); narrow the request". Other failures return "FHIR request failed" with no server detail.',
+      inputSchema: RecordsSinceInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      try {
+        return toTextResult(await getProcedures(input, requestDeps()));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "get_diagnostic_reports",
+    {
+      title: "Get Diagnostic Reports",
+      description:
+        'List FHIR R4 DiagnosticReport resources (lab panels, imaging and pathology reports) for one patient. Pass since (YYYY-MM-DD) for patients with a long history. Returns a JSON array with status, category, report code, effective and issued times, coded conclusions and references to the result Observations. The narrative conclusion and attached documents are never returned; use get_lab_results for the values. Read only. Every call writes one audit record in which the patient id is HMAC-hashed; no PHI is logged. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request. More than 200 results returns "Too many results (more than 200); narrow the request". Other failures return "FHIR request failed" with no server detail.',
+      inputSchema: RecordsSinceInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      try {
+        return toTextResult(await getDiagnosticReports(input, requestDeps()));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "get_lab_results",
+    {
+      title: "Get Lab Results",
+      description:
+        'List laboratory Observation resources for one patient without knowing a code; use search_observations when you know the LOINC code. Pass since (YYYY-MM-DD) for patients with a long history. Returns a JSON array with status, code, effective or issued time, the value, coded interpretation (for example high or low) and panel components. Read only. Every call writes one audit record in which the patient id is HMAC-hashed; no PHI is logged. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request. More than 200 results returns "Too many results (more than 200); narrow the request". Other failures return "FHIR request failed" with no server detail.',
+      inputSchema: RecordsSinceInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      try {
+        return toTextResult(await getLabResults(input, requestDeps()));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "get_vital_signs",
+    {
+      title: "Get Vital Signs",
+      description:
+        'List vital-sign Observation resources (blood pressure, heart rate, temperature, weight and similar) for one patient. Pass since (YYYY-MM-DD) for patients with a long history. Returns a JSON array with status, code, effective time and the value; blood pressure carries systolic and diastolic in component. Read only. Every call writes one audit record in which the patient id is HMAC-hashed; no PHI is logged. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request. More than 200 results returns "Too many results (more than 200); narrow the request". Other failures return "FHIR request failed" with no server detail.',
+      inputSchema: RecordsSinceInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      try {
+        return toTextResult(await getVitalSigns(input, requestDeps()));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "get_care_team",
+    {
+      title: "Get Care Team",
+      description:
+        'List FHIR R4 CareTeam resources for one patient. Use it to see which roles are involved in care. Returns a JSON array with status, category, period and the coded role of each participant; member names and references are never returned. Read only. Every call writes one audit record in which the patient id is HMAC-hashed; no PHI is logged. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request. More than 200 results returns "Too many results (more than 200); narrow the request". Other failures return "FHIR request failed" with no server detail.',
+      inputSchema: PatientRecordInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      try {
+        return toTextResult(await getCareTeam(input, requestDeps()));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "get_goals",
+    {
+      title: "Get Goals",
+      description:
+        'List FHIR R4 Goal resources for one patient. Returns a JSON array with lifecycle and achievement status, category, the coded goal description, start date and targets (measure, quantity, due date). A goal recorded only as free text comes back without a description code. Read only. Every call writes one audit record in which the patient id is HMAC-hashed; no PHI is logged. Access is checked first against the server patient policy: a patient outside the caller grant returns "Patient access not authorized" before any FHIR request. More than 200 results returns "Too many results (more than 200); narrow the request". Other failures return "FHIR request failed" with no server detail.',
+      inputSchema: PatientRecordInput.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      try {
+        return toTextResult(await getGoals(input, requestDeps()));
       } catch (err) {
         return toErrorResult(err);
       }

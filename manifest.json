@@ -3,7 +3,7 @@
   "name": "hipaa-fhir-mcp",
   "display_name": "HIPAA FHIR MCP",
   "version": "0.8.1",
-  "description": "HIPAA-aligned MCP server exposing nine read-only FHIR R4 tools with HMAC-keyed audit logging.",
+  "description": "HIPAA-aligned MCP server exposing fifteen read-only FHIR R4 tools with HMAC-keyed audit logging.",
   "long_description": "Exposes a patient summary plus Patient, Observation, MedicationRequest, Condition, AllergyIntolerance, Immunization and Encounter reads to Claude, each behind a per-patient grant. Implements the §164.312(b) audit invariant: every tool call emits one structured JSON record where the patient id is HMAC-SHA-256 hashed with a server-side secret before it is written. Plaintext patient ids are never logged. Defaults to the public synthetic SMART sandbox at https://r4.smarthealthit.org. Stubs for SMART OAuth, SPIFFE workload identity, and KMS envelope encryption document the production path without faking compliance.",
   "author": {
     "name": "Tanya Babitskaya",
@@ -69,6 +69,30 @@
     {
       "name": "find_patient",
       "description": "Find patients in your grant by identifier and return their FHIR ids."
+    },
+    {
+      "name": "get_procedures",
+      "description": "List FHIR R4 Procedure resources for a patient, optionally since a date."
+    },
+    {
+      "name": "get_diagnostic_reports",
+      "description": "List FHIR R4 DiagnosticReport resources for a patient, without narrative text."
+    },
+    {
+      "name": "get_lab_results",
+      "description": "List laboratory Observations for a patient, optionally since a date."
+    },
+    {
+      "name": "get_vital_signs",
+      "description": "List vital-sign Observations for a patient, optionally since a date."
+    },
+    {
+      "name": "get_care_team",
+      "description": "List FHIR R4 CareTeam resources for a patient with participant roles only."
+    },
+    {
+      "name": "get_goals",
+      "description": "List FHIR R4 Goal resources for a patient."
     }
   ],
   "user_config": {

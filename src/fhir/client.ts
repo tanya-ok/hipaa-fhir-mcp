@@ -13,10 +13,16 @@ import {
 import {
   type AllergyIntolerance,
   AllergyIntoleranceSchema,
+  type CareTeam,
+  CareTeamSchema,
   type Condition,
   ConditionSchema,
+  type DiagnosticReport,
+  DiagnosticReportSchema,
   type Encounter,
   EncounterSchema,
+  type Goal,
+  GoalSchema,
   type Immunization,
   ImmunizationSchema,
   MAX_PAGES,
@@ -27,6 +33,8 @@ import {
   PAGE_SIZE,
   PatientIdSchema,
   PatientSchema,
+  type Procedure,
+  ProcedureSchema,
   SearchBundleSchema,
 } from "./schemas.js";
 import type { MedicationRequest, Observation, Patient } from "./types.js";
@@ -76,7 +84,23 @@ export interface FhirClient {
   getImmunizations(patientId: string): Promise<Immunization[]>;
   getEncounters(patientId: string, since?: string): Promise<Encounter[]>;
   findPatients(identifier: string): Promise<Patient[]>;
+  getProcedures(patientId: string, since?: string): Promise<Procedure[]>;
+  getDiagnosticReports(
+    patientId: string,
+    since?: string,
+  ): Promise<DiagnosticReport[]>;
+  getObservationsByCategory(
+    patientId: string,
+    category: ObservationCategory,
+    since?: string,
+  ): Promise<Observation[]>;
+  getCareTeams(patientId: string): Promise<CareTeam[]>;
+  getGoals(patientId: string): Promise<Goal[]>;
 }
+
+export type ObservationCategory = "laboratory" | "vital-signs";
+const sinceParam = (since?: string): Record<string, string> =>
+  since ? { date: `ge${since}` } : {};
 
 export class HttpFhirClient implements FhirClient {
   private readonly http: AxiosInstance;
@@ -180,6 +204,51 @@ export class HttpFhirClient implements FhirClient {
       since ? { date: `ge${since}` } : {},
       bySubject,
     );
+  }
+
+  async getProcedures(patientId: string, since?: string): Promise<Procedure[]> {
+    return this.search(
+      "Procedure",
+      ProcedureSchema,
+      patientId,
+      sinceParam(since),
+      bySubject,
+    );
+  }
+
+  async getDiagnosticReports(
+    patientId: string,
+    since?: string,
+  ): Promise<DiagnosticReport[]> {
+    return this.search(
+      "DiagnosticReport",
+      DiagnosticReportSchema,
+      patientId,
+      sinceParam(since),
+      bySubject,
+    );
+  }
+
+  async getObservationsByCategory(
+    patientId: string,
+    category: ObservationCategory,
+    since?: string,
+  ): Promise<Observation[]> {
+    return this.search(
+      "Observation",
+      ObservationSchema,
+      patientId,
+      { category, ...sinceParam(since) },
+      bySubject,
+    );
+  }
+
+  async getCareTeams(patientId: string): Promise<CareTeam[]> {
+    return this.search("CareTeam", CareTeamSchema, patientId, {}, bySubject);
+  }
+
+  async getGoals(patientId: string): Promise<Goal[]> {
+    return this.search("Goal", GoalSchema, patientId, {}, bySubject);
   }
 
   private async search<T extends { id: string }>(

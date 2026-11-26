@@ -57,7 +57,7 @@ pnpm dlx @modelcontextprotocol/inspector pnpm exec tsx src/server.ts
 | `src/fhir/client.ts` | HTTP FHIR client (axios), swappable for HealthLake |
 | `src/fhir/schemas.ts` | Bounded response schemas and the shared patient id schema |
 | `src/fhir/types.ts` | Minimal FHIR R4 types used by the tools |
-| `src/tools/*.ts` | The nine exposed MCP tools and their zod input schemas |
+| `src/tools/*.ts` | The fifteen exposed MCP tools and their zod input schemas |
 | `src/security/patient-policy.ts` | Deny-by-default patient and tool grants, checked before any FHIR request |
 | `src/security/smart-backend.ts` | SMART Backend Services client authentication (implemented) |
 | `src/security/oauth.ts` | SMART-on-FHIR OAuth 2.1 + PKCE stub |

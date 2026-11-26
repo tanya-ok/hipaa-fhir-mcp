@@ -1,6 +1,6 @@
 <p class="project-kicker">Healthcare / Synthetic data</p>
 
-# Give agents nine focused, read-only health-data tools.
+# Give agents fifteen focused, read-only health-data tools.
 
 <p class="project-lead">Read a synthetic patient record, observations, medications, conditions, allergies, immunizations and encounters through a small, validated interface. Keep sensitive values out of audit logs.</p>
 
@@ -20,8 +20,8 @@ config:
 ---
 flowchart TB
     accTitle: Validated access to synthetic health records
-    accDescr: The AI client invokes one of nine read-only tools. The server validates input, reads the synthetic FHIR service over HTTPS, validates the response and records a minimized audit outcome.
-    A["AI client"] --> T["Nine read-only tools<br/>Patient / observations / medications / more"]
+    accDescr: The AI client invokes one of fifteen read-only tools. The server validates input, reads the synthetic FHIR service over HTTPS, validates the response and records a minimized audit outcome.
+    A["AI client"] --> T["Fifteen read-only tools<br/>Patient / observations / medications / more"]
     T --> V["FHIR tool server<br/>Validates input and response"]
     V <-->|Verified HTTPS| F[("Synthetic FHIR records")]
     V --> L["Audit outcome<br/>No patient values"]

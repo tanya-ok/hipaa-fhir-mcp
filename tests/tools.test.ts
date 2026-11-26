@@ -78,6 +78,26 @@ class StubFhirClient implements FhirClient {
   findPatients(): Promise<never> {
     throw new Error("findPatients not stubbed");
   }
+
+  getProcedures(): Promise<never> {
+    throw new Error("getProcedures not stubbed");
+  }
+
+  getDiagnosticReports(): Promise<never> {
+    throw new Error("getDiagnosticReports not stubbed");
+  }
+
+  getObservationsByCategory(): Promise<never> {
+    throw new Error("getObservationsByCategory not stubbed");
+  }
+
+  getCareTeams(): Promise<never> {
+    throw new Error("getCareTeams not stubbed");
+  }
+
+  getGoals(): Promise<never> {
+    throw new Error("getGoals not stubbed");
+  }
 }
 
 describe("audit logger", () => {

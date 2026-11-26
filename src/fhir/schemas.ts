@@ -54,6 +54,18 @@ export const ObservationSchema = z.object({
   issued: text.optional(),
   valueQuantity: quantity.optional(),
   valueCodeableConcept: concept.optional(),
+  interpretation: z.array(concept).max(8).optional(),
+  // Panels such as blood pressure carry their values here.
+  component: z
+    .array(
+      z.object({
+        code: concept,
+        valueQuantity: quantity.optional(),
+        valueCodeableConcept: concept.optional(),
+      }),
+    )
+    .max(32)
+    .optional(),
 });
 
 export const MedicationRequestSchema = z.object({
@@ -143,6 +155,106 @@ export const EncounterSchema = z.object({
   period: z.object({ start: text.optional(), end: text.optional() }).optional(),
 });
 
+const period = z.object({ start: text.optional(), end: text.optional() });
+
+export const ProcedureSchema = z.object({
+  resourceType: z.literal("Procedure"),
+  id,
+  status: z.enum([
+    "preparation",
+    "in-progress",
+    "not-done",
+    "on-hold",
+    "stopped",
+    "completed",
+    "entered-in-error",
+    "unknown",
+  ]),
+  category: concept.optional(),
+  code: concept.optional(),
+  subject: reference,
+  performedDateTime: text.optional(),
+  performedPeriod: period.optional(),
+});
+
+// The narrative conclusion and attached documents are dropped; coded results stay.
+export const DiagnosticReportSchema = z.object({
+  resourceType: z.literal("DiagnosticReport"),
+  id,
+  status: z.enum([
+    "registered",
+    "partial",
+    "preliminary",
+    "final",
+    "amended",
+    "corrected",
+    "appended",
+    "cancelled",
+    "entered-in-error",
+    "unknown",
+  ]),
+  category: z.array(concept).max(8).optional(),
+  code: concept,
+  subject: reference,
+  effectiveDateTime: text.optional(),
+  effectivePeriod: period.optional(),
+  issued: text.optional(),
+  result: z.array(reference).max(200).optional(),
+  conclusionCode: z.array(concept).max(32).optional(),
+});
+
+// Members are left out: they name people and organizations. Roles stay.
+export const CareTeamSchema = z.object({
+  resourceType: z.literal("CareTeam"),
+  id,
+  status: z
+    .enum(["proposed", "active", "suspended", "inactive", "entered-in-error"])
+    .optional(),
+  category: z.array(concept).max(8).optional(),
+  subject: reference,
+  period: period.optional(),
+  participant: z
+    .array(z.object({ role: z.array(concept).max(8).optional() }))
+    .max(64)
+    .optional(),
+});
+
+export const GoalSchema = z.object({
+  resourceType: z.literal("Goal"),
+  id,
+  lifecycleStatus: z.enum([
+    "proposed",
+    "planned",
+    "accepted",
+    "active",
+    "on-hold",
+    "completed",
+    "cancelled",
+    "entered-in-error",
+    "rejected",
+  ]),
+  achievementStatus: concept.optional(),
+  category: z.array(concept).max(8).optional(),
+  // Coded goals only: a goal written as free text comes back without a code.
+  description: concept,
+  subject: reference,
+  startDate: text.optional(),
+  target: z
+    .array(
+      z.object({
+        measure: concept.optional(),
+        detailQuantity: quantity.optional(),
+        dueDate: text.optional(),
+      }),
+    )
+    .max(16)
+    .optional(),
+});
+
+export type Procedure = z.infer<typeof ProcedureSchema>;
+export type DiagnosticReport = z.infer<typeof DiagnosticReportSchema>;
+export type CareTeam = z.infer<typeof CareTeamSchema>;
+export type Goal = z.infer<typeof GoalSchema>;
 export type Condition = z.infer<typeof ConditionSchema>;
 export type AllergyIntolerance = z.infer<typeof AllergyIntoleranceSchema>;
 export type Immunization = z.infer<typeof ImmunizationSchema>;
@@ -164,6 +276,13 @@ export const SinceDateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "since must be YYYY-MM-DD" })
   .describe(
     "Optional start date, YYYY-MM-DD. Only encounters on or after this date are returned; use it when a patient has a long history.",
+  );
+
+export const RecordsSinceSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "since must be YYYY-MM-DD" })
+  .describe(
+    "Optional start date, YYYY-MM-DD. Only records dated on or after this date are returned; use it when a patient has a long history.",
   );
 
 export const MAX_RESULTS = 200;

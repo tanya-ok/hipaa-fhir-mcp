@@ -7,7 +7,8 @@ deployment recipe.
 
 Result on 2026-11-26, release 0.8.0 against Medplum 5.2.18: all nine tools
 passed with an RS384 key, both with token endpoint discovery and with
-`NODE_ENV=production` plus an explicit `SMART_TOKEN_URL`.
+`NODE_ENV=production` plus an explicit `SMART_TOKEN_URL`. The fifteen tools
+on `main` pass the same run.
 
 ## What you need
 
@@ -50,7 +51,7 @@ set -x SMOKE_IDENTIFIER 'urn:example:hipaa-fhir-mcp:lab|SYN-0001'
 node scripts/smoke-live.mjs
 ```
 
-Expected last line: `9 tools, 0 failed`.
+Expected last line: `15 tools, 0 failed`.
 
 ## Notes
 

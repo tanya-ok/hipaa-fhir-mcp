@@ -44,6 +44,21 @@ describe("transport-independent FHIR MCP", () => {
       async findPatients() {
         return [];
       },
+      async getProcedures() {
+        return [];
+      },
+      async getDiagnosticReports() {
+        return [];
+      },
+      async getObservationsByCategory() {
+        return [];
+      },
+      async getCareTeams() {
+        return [];
+      },
+      async getGoals() {
+        return [];
+      },
     };
     const sessions = await Promise.all(
       ["one", "two"].map(async (caller) => {

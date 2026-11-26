@@ -161,6 +161,60 @@ function fhirId(value) {
 const clientId = fhirId(client.id);
 const patientId = fhirId(patient.id);
 
+const lab = await fhir({
+  resourceType: "Observation",
+  status: "final",
+  category: [code(`${hl7}/observation-category`, "laboratory")],
+  code: code("http://loinc.org", "2345-7", "Glucose"),
+  subject,
+  effectiveDateTime: "2026-11-01T08:00:00Z",
+  valueQuantity: {
+    value: 95,
+    unit: "mg/dL",
+    system: "http://unitsofmeasure.org",
+    code: "mg/dL",
+  },
+});
+await fhir({
+  resourceType: "DiagnosticReport",
+  status: "final",
+  category: [code(`${hl7}/v2-0074`, "LAB")],
+  code: code("http://loinc.org", "24323-8", "Comprehensive metabolic panel"),
+  subject,
+  effectiveDateTime: "2026-11-01T08:00:00Z",
+  result: [{ reference: `Observation/${lab.id}` }],
+});
+await fhir({
+  resourceType: "Procedure",
+  status: "completed",
+  code: code("http://snomed.info/sct", "80146002", "Appendectomy"),
+  subject,
+  performedDateTime: "2015-06-01",
+});
+await fhir({
+  resourceType: "CareTeam",
+  status: "active",
+  subject,
+  participant: [
+    {
+      role: [
+        code("http://snomed.info/sct", "446050000", "Primary care physician"),
+      ],
+    },
+  ],
+});
+await fhir({
+  resourceType: "Goal",
+  lifecycleStatus: "active",
+  description: code(
+    "http://snomed.info/sct",
+    "135840009",
+    "Blood pressure monitoring",
+  ),
+  subject,
+  startDate: "2026-10-01",
+});
+
 const here = (name) => new URL(`./${name}`, import.meta.url);
 writeFileSync(
   here("lab.json"),
@@ -193,6 +247,12 @@ writeFileSync(
             "get_immunizations",
             "get_encounters",
             "find_patient",
+            "get_procedures",
+            "get_diagnostic_reports",
+            "get_lab_results",
+            "get_vital_signs",
+            "get_care_team",
+            "get_goals",
           ],
         },
       ],
