@@ -8,7 +8,7 @@ primary_region = "ams"
   dockerfile = "Dockerfile"
 
   [build.args]
-    VERSION = "0.8.0"
+    VERSION = "0.8.1"
 
 [env]
   MCP_ALLOWED_HOSTS = "hipaa-fhir-mcp-demo.fly.dev"
