@@ -286,7 +286,7 @@ For servers that use [SMART Backend Services](https://hl7.org/fhir/smart-app-lau
 | `SMART_KEY_ID` | the `kid` of the registered public key |
 | `SMART_PRIVATE_KEY_FILE` | PEM private key, RSA 2048+ (RS384) or EC P-384 (ES384), mode 600 |
 | `SMART_SCOPE` | optional; defaults to `system/<Resource>.rs` for every resource the tools read |
-| `SMART_TOKEN_URL` | required when `NODE_ENV=production`; otherwise read from `.well-known/smart-configuration` |
+| `SMART_TOKEN_URL` | required unless `NODE_ENV` is `development` or `test`; in those modes read from `.well-known/smart-configuration` |
 
 The server signs a short-lived client assertion (5 minutes, unique `jti`), exchanges it for an access token, caches the token until a minute before expiry and gets a new one once after a 401. Token endpoint responses and errors are never logged or returned to the agent. The token is sent only to the FHIR base origin. A static `FHIR_AUTH_TOKEN` remains available; the two cannot be combined.
 

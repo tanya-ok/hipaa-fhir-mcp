@@ -273,7 +273,11 @@ describe("FHIR client with SMART tokens", () => {
 });
 
 describe("SMART configuration", () => {
-  const base = { AUDIT_HMAC_KEY: "a".repeat(64), FHIR_BASE_URL: BASE.href };
+  const base = {
+    AUDIT_HMAC_KEY: "a".repeat(64),
+    FHIR_BASE_URL: BASE.href,
+    NODE_ENV: "test",
+  };
 
   it("needs client id, key id and key file together", () => {
     expect(

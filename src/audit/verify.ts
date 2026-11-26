@@ -36,6 +36,14 @@ export function verifyAuditLines(
       continue;
     }
     if (
+      record === null ||
+      typeof record !== "object" ||
+      Array.isArray(record)
+    ) {
+      result.problems.push(`line ${index + 1}: not an audit record`);
+      continue;
+    }
+    if (
       record.key_id !== keyId ||
       typeof record.mac !== "string" ||
       typeof record.chain_id !== "string" ||
