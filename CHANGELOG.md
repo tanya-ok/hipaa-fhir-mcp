@@ -8,6 +8,24 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-26
+
+### Added
+
+- Patient grants accept an optional `expires_at`; an expired grant is treated as absent.
+- Audit records are chained: each carries `chain_id`, `seq`, `prev` and `mac`. `scripts/verify-audit.mjs` checks a log file and reports an edited, removed or repeated record; `--strict` also fails on records under another key or without chain fields.
+- `scripts/smoke-live.mjs` covers `find_patient` when `SMOKE_IDENTIFIER` is set.
+- Docs: data flow, threat model and a guide to deploying inside a HIPAA program.
+
+### Changed
+
+- With `NODE_ENV=production` and SMART Backend Services, `SMART_TOKEN_URL` is required; token endpoint discovery remains for development and test. The container image sets `NODE_ENV=production`.
+
+### Fixed
+
+- Search results from servers that add `OperationOutcome` entries marked `search.mode: outcome` (for example Epic) no longer fail the call. All nine tools pass against the Epic sandbox.
+- The HTTP rate limiter keeps other clients' counters when its table is full.
+
 ## [0.7.1] - 2026-11-25
 
 ### Added
@@ -186,6 +204,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
+[0.8.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.5.0...v0.6.0
