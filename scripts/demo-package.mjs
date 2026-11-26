@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { once } from "node:events";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:https";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -99,6 +99,21 @@ try {
       res.end(JSON.stringify(value));
     },
   );
+  // Tools are denied without a policy; grant the three demo patients and tools.
+  await writeFile(
+    join(scratch, "policy.json"),
+    JSON.stringify({
+      version: 1,
+      grants: [
+        {
+          principal: "synthetic-demo-operator",
+          patients: ["synthetic-ok", "synthetic-missing", "synthetic-wrong"],
+          tools: ["get_patient", "search_observations", "get_medication_list"],
+        },
+      ],
+    }),
+    { mode: 0o600 },
+  );
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   child = spawn(process.execPath, [entry], {
@@ -110,6 +125,8 @@ try {
       FHIR_BASE_URL: `https://127.0.0.1:${server.address().port}/fhir`,
       AUDIT_HMAC_KEY: randomBytes(32).toString("hex"),
       CALLER_IDENTITY: "synthetic-package-demo",
+      PATIENT_POLICY_FILE: join(scratch, "policy.json"),
+      LOCAL_SYNTHETIC_PRINCIPAL: "synthetic-demo-operator",
     },
     stdio: ["pipe", "pipe", "pipe"],
   });
@@ -190,6 +207,14 @@ try {
     });
   }
   const requestsBeforeRejection = requests.length;
+  // A patient outside the grant is refused before any backend request.
+  assert.deepEqual(
+    (await call("get_patient", { patient_id: "synthetic-outside" })).result,
+    {
+      content: [{ type: "text", text: "Patient access not authorized" }],
+      isError: true,
+    },
+  );
   for (const [name, args] of [
     ["get_patient", { patient_id: "synthetic-private/invalid" }],
     ["synthetic-private-tool", {}],
@@ -231,6 +256,7 @@ try {
     "synthetic-ok",
     "synthetic-missing",
     "synthetic-wrong",
+    "synthetic-outside",
     "synthetic-private",
   ])
     assert.ok(!audit.includes(value));
@@ -245,7 +271,7 @@ try {
         synthetic_backend: true,
         calls,
         audit_records: records.length,
-        rejected_before_backend: 2,
+        rejected_before_backend: 3,
         recovery: "passed",
         cleanup: "passed",
       },

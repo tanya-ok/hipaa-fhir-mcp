@@ -21,8 +21,9 @@ install the resulting tarball in another empty directory, and pass the installed
 node scripts/demo-package.mjs /absolute/path/to/installed/hipaa-fhir-mcp/dist/server.js
 ```
 
-The script checks all three tools, a missing resource, a wrong resource type,
-invalid arguments, an unknown tool, and a successful call after the failures.
+The script writes its own patient policy, then checks three tools, a missing
+resource, a wrong resource type, a patient outside the grant, invalid
+arguments, an unknown tool, and a successful call after the failures.
 It verifies one hash-only audit record per call, protocol-only stdout, no
 backend request for rejected inputs, and child/server cleanup. A passing result
 prints eight calls and eight audit records. This was exercised on 2026-10-07
