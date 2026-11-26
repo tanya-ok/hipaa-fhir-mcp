@@ -3,7 +3,7 @@
   "name": "io.github.tanya-ok/hipaa-fhir-mcp",
   "title": "HIPAA FHIR MCP (prototype)",
   "description": "Prototype: nine read-only FHIR R4 tools, per-patient grants and HMAC audit. Synthetic data only.",
-  "version": "0.4.0",
+  "version": "0.8.0",
   "repository": {
     "url": "https://github.com/tanya-ok/hipaa-fhir-mcp",
     "source": "github"
@@ -12,8 +12,8 @@
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/tanya-ok/hipaa-fhir-mcp/releases/download/v0.4.0/hipaa-fhir-mcp-0.4.0.mcpb",
-      "fileSha256": "3f04c2cb8424725e01353e912681aaef00d071f33803008871a55f6416c849ce",
+      "identifier": "https://github.com/tanya-ok/hipaa-fhir-mcp/releases/download/v0.8.0/hipaa-fhir-mcp-0.8.0.mcpb",
+      "fileSha256": "8bd5ee094d3e7f873abbe20af8b213e452ddc303901d50fb3fd188c8fa82ab6d",
       "transport": {
         "type": "stdio"
       },
@@ -45,6 +45,10 @@
         {
           "name": "SMART_PRIVATE_KEY_FILE",
           "description": "Absolute path to a PEM private key, RSA 2048+ or EC P-384, mode 600"
+        },
+        {
+          "name": "SMART_TOKEN_URL",
+          "description": "SMART token endpoint; required when NODE_ENV=production, otherwise read from .well-known/smart-configuration"
         },
         {
           "name": "PATIENT_POLICY_FILE",
