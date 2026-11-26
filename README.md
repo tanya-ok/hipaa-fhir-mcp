@@ -311,7 +311,7 @@ AUDIT_HMAC_KEY=<key> node scripts/verify-audit.mjs /path/to/audit.jsonl
 
 It reports an edited record, and a record removed from or repeated inside a chain, and exits non-zero. It prints counts only. Limits: records cut from the end of a chain and a whole removed chain are not detected, and anyone holding the key can re-sign a log. Ship the log to append-only storage for those cases.
 
-To rotate the key: start the server with a new `AUDIT_HMAC_KEY`. New records get a new `key_id` and a new chain. Keep the old key in your secrets manager for as long as the old records are retained, and verify them with it; records under another key are counted as skipped. The same patient hashes differently under the new key, so cross-referencing a patient across the rotation needs both keys.
+To rotate the key: start the server with a new `AUDIT_HMAC_KEY`. New records get a new `key_id` and a new chain. Keep the old key in your secrets manager for as long as the old records are retained, and verify them with it; records under another key or without chain fields are counted as skipped. A skipped record is not verified, so anyone able to append to the file could add one: pass `--strict` to fail on every skipped record when the log should hold a single key. The same patient hashes differently under the new key, so cross-referencing a patient across the rotation needs both keys.
 
 ## Install in Claude Desktop
 

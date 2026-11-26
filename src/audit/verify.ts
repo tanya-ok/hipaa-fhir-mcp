@@ -22,6 +22,7 @@ export function verifyAuditLines(
   lines: string[],
   key: string,
   keyId: string,
+  options: { strict?: boolean } = {},
 ): AuditVerification {
   const result: AuditVerification = { verified: 0, skipped: 0, problems: [] };
   const chains = new Map<string, AuditRecord[]>();
@@ -41,6 +42,9 @@ export function verifyAuditLines(
       !Number.isInteger(record.seq)
     ) {
       result.skipped += 1;
+      // Strict: a log expected to hold one key must not carry unverifiable records.
+      if (options.strict)
+        result.problems.push(`line ${index + 1}: not chained under this key`);
       continue;
     }
     const { mac, ...unsigned } = record;

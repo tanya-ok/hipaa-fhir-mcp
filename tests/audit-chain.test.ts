@@ -85,4 +85,15 @@ describe("audit hash chain", () => {
     );
     expect(result).toEqual({ verified: 3, skipped: 2, problems: [] });
   });
+
+  it("reports skipped records in strict mode", async () => {
+    const { lines, keyId } = await write("strict.jsonl", 2);
+    const injected = JSON.stringify({ tool: "get_patient", key_id: "other" });
+    const result = verifyAuditLines([...lines, injected], KEY, keyId, {
+      strict: true,
+    });
+    expect(result.verified).toBe(2);
+    expect(result.skipped).toBe(1);
+    expect(result.problems).toEqual(["line 3: not chained under this key"]);
+  });
 });
