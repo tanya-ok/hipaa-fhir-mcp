@@ -54,6 +54,9 @@ jobs:
             exit 1
           fi
 
+      - name: Package demo over stdio
+        run: node scripts/demo-package.mjs
+
       - name: PHI sweep
         run: pnpm check:phi
 
