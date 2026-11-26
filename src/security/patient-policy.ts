@@ -28,6 +28,7 @@ export const PatientPolicySchema = z
             principal: z.string().min(1).max(256),
             patients: z.array(PatientIdSchema).min(1).max(1000),
             tools: z.array(z.enum(TOOL_NAMES)).min(1),
+            expires_at: z.iso.datetime({ offset: true }).optional(),
           })
           .strict(),
       )
@@ -69,6 +70,7 @@ export const DENY_ALL: PatientAuthorizer = Object.freeze({
 /** Exact principal, patient and tool match. No wildcards, no defaults. */
 export function createPatientAuthorizer(
   policy: PatientPolicy,
+  now: () => number = Date.now,
 ): PatientAuthorizer {
   const grants = new Map(
     PatientPolicySchema.parse(policy).grants.map((grant) => [
@@ -76,21 +78,31 @@ export function createPatientAuthorizer(
       {
         patients: new Set(grant.patients),
         tools: new Set<ToolName>(grant.tools),
+        expiresAt:
+          grant.expires_at === undefined
+            ? undefined
+            : Date.parse(grant.expires_at),
       },
     ]),
   );
+  // An expired grant is treated as absent; the clock is read on every call.
+  const liveGrant = (context: RequestContext) => {
+    if (context.provenance === "none" || context.principal === null)
+      return undefined;
+    const grant = grants.get(context.principal);
+    if (grant === undefined) return undefined;
+    if (grant.expiresAt !== undefined && !(now() < grant.expiresAt))
+      return undefined;
+    return grant;
+  };
   const authorizer: PatientAuthorizer = {
     authorize(context, tool, patientId) {
-      if (context.provenance === "none" || context.principal === null)
-        return false;
-      const grant = grants.get(context.principal);
+      const grant = liveGrant(context);
       if (grant === undefined) return false;
       return grant.tools.has(tool) && grant.patients.has(patientId);
     },
     allowsTool(context, tool) {
-      if (context.provenance === "none" || context.principal === null)
-        return false;
-      return grants.get(context.principal)?.tools.has(tool) ?? false;
+      return liveGrant(context)?.tools.has(tool) ?? false;
     },
   };
   return Object.freeze(authorizer);
