@@ -211,6 +211,29 @@ describe("HTTP transport with bearer tokens", () => {
     expect(codes[2]).toBe(429);
   });
 
+  it("keeps other clients limited when the limiter table is full", () => {
+    let t = 0;
+    const limiter = new RateLimiter(1, 1000, () => t, 3);
+    for (const key of ["a", "b", "c"]) expect(limiter.allow(key)).toBe(true);
+    t = 10;
+    expect(limiter.allow("d")).toBe(true);
+    expect(limiter.allow("b")).toBe(false);
+    expect(limiter.allow("c")).toBe(false);
+    expect(limiter.allow("d")).toBe(false);
+  });
+
+  it("drops expired limiter entries instead of live ones", () => {
+    let t = 0;
+    const limiter = new RateLimiter(1, 1000, () => t, 3);
+    expect(limiter.allow("old")).toBe(true);
+    t = 900;
+    expect(limiter.allow("live")).toBe(true);
+    t = 1000;
+    expect(limiter.allow("x")).toBe(true);
+    expect(limiter.allow("y")).toBe(true);
+    expect(limiter.allow("live")).toBe(false);
+  });
+
   it("rate limits by the proxy client header when one is configured", async () => {
     const { base } = await start(bearer, {
       limit: 1,

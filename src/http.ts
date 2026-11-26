@@ -92,12 +92,19 @@ export class RateLimiter {
     private readonly limit: number,
     private readonly windowMs: number,
     private readonly now: () => number = Date.now,
+    private readonly maxKeys = 10_000,
   ) {}
   allow(key: string): boolean {
     const t = this.now();
     const entry = this.hits.get(key);
     if (!entry || t - entry.start >= this.windowMs) {
-      if (this.hits.size > 10_000) this.hits.clear();
+      this.hits.delete(key);
+      // Insertion order is window start order: drop expired keys, then the oldest if full.
+      for (const [other, seen] of this.hits) {
+        if (t - seen.start < this.windowMs && this.hits.size < this.maxKeys)
+          break;
+        this.hits.delete(other);
+      }
       this.hits.set(key, { start: t, count: 1 });
       return true;
     }

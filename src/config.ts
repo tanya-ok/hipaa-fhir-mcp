@@ -118,6 +118,18 @@ export const ConfigSchema = z
       });
     }
     if (
+      config.NODE_ENV === "production" &&
+      smart.some(Boolean) &&
+      !config.SMART_TOKEN_URL
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["SMART_TOKEN_URL"],
+        message:
+          "SMART_TOKEN_URL is required in production, so the client assertion is never sent to an endpoint taken from discovery",
+      });
+    }
+    if (
       !config.FHIR_BASE_URL &&
       (config.NODE_ENV === undefined ||
         config.NODE_ENV === "production" ||

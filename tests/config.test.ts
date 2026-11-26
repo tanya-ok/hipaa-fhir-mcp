@@ -22,6 +22,26 @@ describe("endpoint policy", () => {
       }),
     ).toMatchObject({ FHIR_BASE_URL: "https://example.org/fhir" });
   });
+  it("requires an explicit SMART token endpoint in production", () => {
+    const smart = {
+      ...base,
+      FHIR_BASE_URL: "https://example.org/fhir",
+      SMART_CLIENT_ID: "client",
+      SMART_KEY_ID: "kid",
+      SMART_PRIVATE_KEY_FILE: "/run/secrets/smart.pem",
+    };
+    expect(ConfigSchema.safeParse(smart).success).toBe(true);
+    expect(
+      ConfigSchema.safeParse({ ...smart, NODE_ENV: "production" }).success,
+    ).toBe(false);
+    expect(
+      ConfigSchema.safeParse({
+        ...smart,
+        NODE_ENV: "production",
+        SMART_TOKEN_URL: "https://example.org/oauth2/token",
+      }).success,
+    ).toBe(true);
+  });
   it("requires an endpoint when execution mode is omitted", () => {
     expect(
       ConfigSchema.safeParse({ AUDIT_HMAC_KEY: base.AUDIT_HMAC_KEY }).success,
