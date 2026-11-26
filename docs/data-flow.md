@@ -7,7 +7,7 @@ What leaves the FHIR server, where it goes and what is kept. Every statement her
 | Destination | What it receives | Kept by this server |
 |---|---|---|
 | MCP client and its model | The projected fields of the requested resources (table below) | No |
-| Audit sink (stderr or `AUDIT_LOG_FILE`) | One record per call: time, tool, HMAC of the patient id, key id, caller label, request id, status, error code | Only in the sink you configure |
+| Audit sink (stderr or `AUDIT_LOG_FILE`) | One record per call: time, tool, HMAC of the patient id, key id, caller label, request id, status, error code, chain id, sequence number, previous record MAC and record MAC | Only in the sink you configure |
 | FHIR server | The patient id, search parameters and the backend access token | No |
 | SMART token endpoint | A signed client assertion; no patient data | Access token in memory until shortly before expiry |
 | Process memory | One response at a time, at most 1 MB and 200 resources per call | No cache, no database, no disk writes besides the audit sink |
