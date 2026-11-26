@@ -8,6 +8,10 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+### Added
+
+- `deploy/medplum-lab`: a local Medplum with a seed script to run the live smoke test against a second FHIR server over SMART Backend Services.
+
 ## [0.8.0] - 2026-11-26
 
 ### Added
