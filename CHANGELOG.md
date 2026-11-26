@@ -8,6 +8,8 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-26
+
 ### Changed
 
 - `SMART_TOKEN_URL` is now required with SMART Backend Services unless `NODE_ENV` is `development` or `test`; an unset `NODE_ENV` no longer allows token endpoint discovery.
@@ -216,6 +218,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
+[0.8.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.6.0...v0.7.0
