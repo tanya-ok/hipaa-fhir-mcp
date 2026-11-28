@@ -8,7 +8,7 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
-## [0.9.0] - 2026-11-26
+## [0.9.0] - 2026-11-28
 
 ### Added
 
