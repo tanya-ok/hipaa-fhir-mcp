@@ -22,6 +22,7 @@ nav = [
   { "Development plan" = "development-plan.md" },
   { "Hardening evidence" = "quorum-hardening-2026-10-07.md" },
   { "Security automation" = "security-automation.md" },
+  { "Adding a tool" = "agents/adding-a-tool.md" },
 ] },
 ]
 

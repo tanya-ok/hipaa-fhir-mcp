@@ -12,6 +12,8 @@ This document explains the security automation that runs on this repository, wit
 | CodeQL | GitHub-native static analysis for JavaScript/TypeScript with the `security-extended` query pack. Runs on push, PR, and weekly on a schedule. | `.github/workflows/codeql.yml` |
 | gitleaks | Scans the full git history for secret-shaped strings on every push and PR. The pinned release tarball is checked against its SHA-256 before use. | `.github/workflows/gitleaks.yml` |
 | Release | On a `v*` tag, a read-only job re-runs the gates, confirms the tag commit is on `main` and that tag, `package.json` and `manifest.json` versions match, then builds the bundle with the gated packer. A separate job with `contents: write` creates a draft release. | `.github/workflows/release.yml` |
+| Risk tier | Classifies every PR by the paths it touches (T0 docs, T1 template code and tests, T2 everything else; unknown paths are T2). On `agent/*` branches it fails on paths agents may not edit or on lost test assertions. | `scripts/risk-tier.mjs`, run from `.github/workflows/ci.yml` |
+| Agent | Claude Code runs only when the owner labels her own issue `agent-ready` and the repository variable `AGENTS_ENABLED` is `true`. It pushes an `agent/*` branch; a human opens and merges the PR. | `.github/workflows/agent.yml` |
 | Dependabot | Weekly grouped PRs for the npm, GitHub Actions, and Docker ecosystems. The `npm` ecosystem reads `pnpm-lock.yaml`; Dependabot has no dedicated `pnpm` ecosystem yet. Security alerts open ad-hoc PRs as soon as advisories land. | `.github/dependabot.yml` |
 
 Every workflow pins actions to full commit SHAs, checks out without persisted credentials, sets job timeouts and grants write permissions only to the job that needs them.
