@@ -10,7 +10,7 @@ five synthetic patients.
 ## Build
 
 ```sh
-docker build --build-arg VERSION=0.8.1 -t hipaa-fhir-mcp-demo deploy/demo
+docker build --build-arg VERSION=0.9.0 -t hipaa-fhir-mcp-demo deploy/demo
 ```
 
 ## Run anywhere that runs a container

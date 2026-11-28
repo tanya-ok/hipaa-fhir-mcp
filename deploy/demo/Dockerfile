@@ -1,6 +1,6 @@
 # Public demo: the released image, the synthetic-only policy, HTTP in demo mode.
 # Build after a release that includes the HTTP transport, for example:
-#   docker build --build-arg VERSION=0.8.1 -t hipaa-fhir-mcp-demo deploy/demo
+#   docker build --build-arg VERSION=0.9.0 -t hipaa-fhir-mcp-demo deploy/demo
 ARG VERSION
 FROM ghcr.io/tanya-ok/hipaa-fhir-mcp:${VERSION}
 COPY --chown=node:node patient-policy.json /app/demo-policy.json

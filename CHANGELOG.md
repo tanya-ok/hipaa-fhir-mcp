@@ -8,6 +8,8 @@ While the project is pre-1.0, breaking changes may occur in any minor release. S
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-26
+
 ### Added
 
 - Six read-only tools: `get_procedures`, `get_diagnostic_reports`, `get_lab_results`, `get_vital_signs` (each with an optional `since` date), `get_care_team` and `get_goals`. Each needs its own grant in the patient policy and writes one audit record. Narrative conclusions, attachments, care team members and free text are not returned.
@@ -228,6 +230,7 @@ The 0.2.0 tag was created but never published as a release; 0.3.0 is the first a
 - README "Why this exists" section explaining the MCP + HIPAA intersection.
 - Versioning policy and this changelog.
 
+[0.9.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/tanya-ok/hipaa-fhir-mcp/compare/v0.7.0...v0.7.1
