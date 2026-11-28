@@ -63,6 +63,32 @@ jobs:
       - name: Desktop bundle payload gate cases
         run: pnpm check:mcpb
 
+  risk-tier:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+
+      # Agent branches fail on forbidden paths or lost test assertions.
+      - name: Classify the change
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          flag=""
+          case "$HEAD_REF" in agent/*) flag="--agent" ;; esac
+          node scripts/risk-tier.mjs "origin/$BASE_REF" HEAD $flag | tee "$RUNNER_TEMP/tier.json"
+          printf '### Risk tier\n\n```json\n%s\n```\n' "$(cat "$RUNNER_TEMP/tier.json")" >> "$GITHUB_STEP_SUMMARY"
+
   container:
     runs-on: ubuntu-latest
     timeout-minutes: 15

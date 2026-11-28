@@ -94,12 +94,9 @@ Conventions:
 
 ## Adding a new tool
 
-1. Create `src/tools/<name>.ts`. Export a zod input schema (`<Name>Input`) and an async function that takes `(input, deps: ToolDeps)`.
-2. Validate input with zod via the SDK's `inputSchema: <Name>Input.shape` registration. Do not trust caller input.
-3. Call `audit.record(...)` exactly once per invocation, including the failure path. Pass the raw `patient_id`; the logger hashes it.
-4. Register the tool in `src/server.ts` with a `description` that names the FHIR resource and warns about PHI in the response.
-5. Add a unit test in `tests/tools.test.ts` using the existing stub FHIR client. Do not call the real sandbox in tests.
-6. Update the tools table in `README.md`.
+Follow [`docs/agents/adding-a-tool.md`](docs/agents/adding-a-tool.md). It lists every file a read-only tool touches, in order, and the commands that define done. `get_goals` is the reference implementation.
+
+Agent branches (`agent/*`) are checked by `scripts/risk-tier.mjs --agent` in CI: forbidden paths or lost test assertions fail the PR.
 
 ## Conventions
 
